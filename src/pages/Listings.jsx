@@ -2,19 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   MapPin, ArrowUpRight, Search, 
-  ShieldCheck, Database, 
-  ChevronLeft, ChevronRight, X, Building2, SearchX
+  Database, ChevronLeft, ChevronRight, X, 
+  Building2, SearchX, ShieldAlert, BarChart3,
+  CheckCircle2, ListFilter
 } from 'lucide-react';
 
 const SkeletonCard = () => (
-  <div className="bg-white border border-slate-200 overflow-hidden animate-pulse">
-    <div className="h-40 bg-slate-50 w-full" />
-    <div className="p-6 space-y-4">
-      <div className="h-4 bg-slate-100 rounded w-3/4" />
-      <div className="h-3 bg-slate-50 rounded w-full" />
-      <div className="pt-4 border-t border-slate-50 flex justify-between">
-        <div className="h-8 bg-slate-50 rounded w-20" />
-        <div className="h-8 bg-slate-50 rounded w-20" />
+  <div className="bg-white border border-slate-200 overflow-hidden rounded-2xl">
+    <div className="p-5 space-y-5 animate-pulse">
+      <div className="flex justify-between">
+        <div className="h-4 bg-slate-100 rounded w-20" />
+        <div className="h-4 bg-slate-100 rounded w-16" />
+      </div>
+      <div className="space-y-3">
+        <div className="h-5 bg-slate-100 rounded w-5/6" />
+        <div className="h-3 bg-slate-50 rounded w-full" />
+      </div>
+      <div className="pt-6 border-t border-slate-100 flex justify-between gap-4">
+        <div className="h-9 bg-slate-50 rounded-xl w-1/2" />
+        <div className="h-9 bg-slate-50 rounded-xl w-1/2" />
       </div>
     </div>
   </div>
@@ -29,13 +35,14 @@ const Listings = () => {
   const itemsPerPage = 12;
 
   const getHighlightedText = (text, highlight) => {
-    if (!highlight.trim()) return text;
-    const parts = String(text).split(new RegExp(`(${highlight})`, 'gi'));
+    if (!highlight || !highlight.trim()) return text;
+    const escapedHighlight = highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const parts = String(text).split(new RegExp(`(${escapedHighlight})`, 'gi'));
     return (
       <span>
         {parts.map((part, i) => 
           part.toLowerCase() === highlight.toLowerCase() ? 
-          <mark key={i} className="bg-yellow-200 text-black px-0.5 rounded-sm">{part}</mark> : part
+          <mark key={i} className="bg-yellow-200 text-slate-900 px-0.5 rounded-sm font-semibold">{part}</mark> : part
         )}
       </span>
     );
@@ -52,13 +59,11 @@ const Listings = () => {
   };
 
   useEffect(() => {
-    const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
-    const API_ENDPOINT = `${base_url.replace(/\/$/, '')}/api/properties`;
-
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await fetch(API_ENDPOINT);
+        const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
+        const res = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
         const data = await res.json();
         setProperties(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -75,8 +80,9 @@ const Listings = () => {
     p.title?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const totalFound = filteredData.length;
   const verifiedCount = filteredData.filter(p => calculateStability(p) > 85).length;
-  const standardCount = filteredData.length - verifiedCount;
+  const standardCount = totalFound - verifiedCount;
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -84,37 +90,36 @@ const Listings = () => {
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-[#FBFBFC] pb-20 text-slate-900 font-sans selection:bg-blue-100">
+    <div className="min-h-screen bg-[#FBFBFC] pb-10 md:pb-20 text-slate-900 font-sans selection:bg-indigo-100">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-4">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className="bg-slate-900 p-2 text-white">
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="bg-indigo-600 p-2.5 text-white rounded-xl">
                 <Building2 size={24} />
               </div>
               <div>
-                <h1 className="text-xl font-black tracking-tighter uppercase">Prophetic Core</h1>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-1.5">
-                  <Database size={10} className="text-blue-500" /> Live Data Stream
+                <h1 className="text-lg md:text-xl font-black tracking-tight uppercase leading-none pb-0.5">
+                  Prophetic<span className="text-indigo-600">Core</span>
+                </h1>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 mt-1">
+                  <Database size={10} className="text-indigo-500" /> Dynamic Asset Intelligence
                 </p>
               </div>
             </div>
 
-            <div className="relative w-full lg:w-[500px]">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <div className="relative w-full lg:w-[480px]">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Find by postcode, street or title..." 
+                placeholder="Search assets by location or name..." 
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-none text-sm focus:bg-white focus:border-slate-900 transition-all outline-none font-medium"
+                className="w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-[13px] focus:bg-white focus:border-indigo-600 transition-all outline-none font-semibold shadow-none"
               />
               {searchTerm && (
-                <button 
-                  onClick={() => setSearchTerm('')} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded-full cursor-pointer"
-                >
-                  <X size={16} className="text-slate-600" />
+                <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded-full cursor-pointer">
+                  <X size={14} className="text-slate-600" />
                 </button>
               )}
             </div>
@@ -122,152 +127,159 @@ const Listings = () => {
         </div>
       </header>
 
-      <main className="max-w-[1440px] mx-auto px-4 md:px-8 mt-10">
-        {!loading && (
-          <div className="flex flex-wrap gap-3 mb-10">
-            <div className="border border-slate-200 bg-white px-4 py-2 flex items-center gap-3">
-              <span className="text-[10px] font-black uppercase text-slate-400">Total Found</span>
-              <span className="text-sm font-bold">{filteredData.length}</span>
+      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-6 md:mt-8">
+        
+        {/* Bordered Stats Bar - No Shadows, Icon Aligned */}
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-px bg-slate-200 border border-slate-200 rounded-2xl overflow-hidden shadow-none">
+          <div className="bg-white px-6 py-5 flex items-center gap-4">
+            <div className="p-2.5 bg-slate-50 rounded-lg text-slate-400 border border-slate-100">
+              <ListFilter size={18} />
             </div>
-            <div className="border border-slate-200 bg-white px-4 py-2 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400">Verified</span>
-              <span className="text-sm font-bold text-emerald-600">{verifiedCount}</span>
-            </div>
-            <div className="border border-slate-200 bg-white px-4 py-2 flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400">Standard</span>
-              <span className="text-sm font-bold text-blue-600">{standardCount}</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Index</span>
+              <span className="text-xl font-black text-slate-900 leading-tight">{totalFound.toLocaleString()} Units</span>
             </div>
           </div>
-        )}
+          <div className="bg-white px-6 py-5 flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-slate-100">
+            <div className="p-2.5 bg-emerald-50 rounded-lg text-emerald-500 border border-emerald-100">
+              <CheckCircle2 size={18} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Growth Assets</span>
+              <span className="text-xl font-black text-slate-900 leading-tight">{verifiedCount.toLocaleString()} Verified</span>
+            </div>
+          </div>
+          <div className="bg-white px-6 py-5 flex items-center gap-4 border-t sm:border-t-0 sm:border-l border-slate-100">
+            <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-500 border border-indigo-100">
+              <BarChart3 size={18} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Standard Yield</span>
+              <span className="text-xl font-black text-slate-900 leading-tight">{standardCount.toLocaleString()} Nodes</span>
+            </div>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
           {loading ? (
             [...Array(8)].map((_, i) => <SkeletonCard key={i} />)
           ) : currentItems.length > 0 ? (
             currentItems.map((prop, index) => {
               const stability = calculateStability(prop);
               const isVerified = stability > 85;
+              const propertyId = prop.id || prop._id;
 
               return (
-                <div 
-                  key={prop.id || index}
-                  className="group bg-white border border-slate-200 p-6 transition-all flex flex-col h-full hover:border-slate-900"
-                >
-                  <div className="mb-6 flex items-start justify-between gap-2">
-                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-1 whitespace-nowrap border border-slate-100">
+                <div key={propertyId || index} className="group bg-white border border-slate-200 rounded-2xl p-5 md:p-6 hover:border-indigo-500 transition-all flex flex-col h-full shadow-none">
+                  <div className="mb-5 flex items-center justify-between">
+                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded border border-slate-100">
                       {prop.tenure || 'Leasehold'}
                     </span>
-                    
                     {isVerified && (
-                      <div className="flex items-center gap-1 text-emerald-600 bg-emerald-50 px-1.5 py-1 shrink-0 border border-emerald-100">
-                        <ShieldCheck size={10} className="shrink-0" />
-                        <span className="text-[8px] font-black uppercase tracking-tight">Verified</span>
-                      </div>
+                      <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest">
+                        <CheckCircle2 size={10} /> Certified
+                      </span>
                     )}
                   </div>
 
                   <div className="flex-grow">
-                    <h3 className="text-[15px] font-bold text-slate-900 leading-tight mb-3">
+                    <h3 className="text-[14px] md:text-[15px] font-bold text-slate-900 leading-snug mb-3 min-h-[42px] group-hover:text-indigo-600 transition-colors">
                       {getHighlightedText(prop.title || 'Market Listing', searchTerm)}
                     </h3>
-                    
                     <div className="flex items-start gap-2 text-slate-500 mb-6">
-                      <MapPin size={14} className="mt-0.5 shrink-0 text-slate-400" />
-                      <p className="text-xs font-medium leading-relaxed">
-                        {getHighlightedText(prop.address || 'Location on Request', searchTerm)}
+                      <MapPin size={14} className="mt-0.5 shrink-0 text-slate-300" />
+                      <p className="text-[12px] font-medium leading-relaxed">
+                        {getHighlightedText(prop.address || 'Address Hidden', searchTerm)}
                       </p>
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-slate-100">
-                    <div className="flex justify-between items-end mb-6">
-                      <div className="space-y-1">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Valuation</span>
-                        <p className="text-base font-black text-slate-900">{prop.price || 'Contact'}</p>
+                  <div className="pt-5 border-t border-slate-100">
+                    <div className="flex justify-between items-end mb-5">
+                      <div>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Value</span>
+                        <p className="text-lg font-black text-slate-900">{prop.price || 'TBA'}</p>
                       </div>
-                      <div className="text-right space-y-1">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Yield Index</span>
-                        <p className={`text-base font-black ${isVerified ? 'text-emerald-600' : 'text-slate-900'}`}>
+                      <div className="text-right">
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Rating</span>
+                        <p className={`text-lg font-black ${isVerified ? 'text-emerald-600' : 'text-slate-900'}`}>
                           {stability}%
                         </p>
                       </div>
                     </div>
                     
-                    <button 
-                      onClick={() => navigate(`/property/${prop.id}`)}
-                      className="w-full py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer border-none outline-none"
-                    >
-                      View Analytics <ArrowUpRight size={14} />
-                    </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => propertyId && navigate(`/risks/${propertyId}`)}
+                        className="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer shadow-none"
+                      >
+                        <ShieldAlert size={14} /> Audit
+                      </button>
+                      <button 
+                        onClick={() => propertyId && navigate(`/property/${propertyId}`)}
+                        className="py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-none"
+                      >
+                        Analysis <ArrowUpRight size={14} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="col-span-full py-24 bg-white border border-slate-200 flex flex-col items-center justify-center text-center px-6">
-              <div className="w-16 h-16 bg-slate-50 flex items-center justify-center rounded-full mb-6 border border-slate-100">
-                <SearchX size={32} className="text-slate-300" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">No Matching Assets Found</h3>
-              <p className="text-slate-500 text-sm max-w-md leading-relaxed">
-                We couldn't find any properties matching your search criteria. Please check your spelling or try searching for a different area.
-              </p>
-              <button 
-                onClick={() => setSearchTerm('')} 
-                className="mt-8 px-8 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-colors cursor-pointer"
-              >
-                Clear Filters & View All
-              </button>
+            <div className="col-span-full py-20 bg-white border border-dashed border-slate-200 rounded-3xl flex flex-col items-center text-center px-6">
+              <SearchX size={48} className="text-slate-200 mb-4" />
+              <h3 className="text-lg font-bold text-slate-900">No Assets Matching Query</h3>
+              <p className="text-slate-400 text-sm mt-1">Try searching by a different postcode or keyword.</p>
+              <button onClick={() => setSearchTerm('')} className="mt-6 px-8 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer">Clear Search</button>
             </div>
           )}
         </div>
 
         {!loading && filteredData.length > itemsPerPage && (
-          <div className="mt-20 flex flex-col md:flex-row items-center justify-between gap-8 border-t border-slate-200 pt-10">
-            <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-              Index <span className="text-slate-900">{indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredData.length)}</span> of {filteredData.length} Assets
-            </div>
+          <div className="mt-12 md:mt-16 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-200 pt-8">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              Index Segment <span className="text-slate-900">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredData.length)}</span> of {filteredData.length}
+            </p>
 
-            <nav className="flex items-center gap-1 px-1 py-1 bg-white border border-slate-200">
+            <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-none">
               <button 
                 onClick={() => { setCurrentPage(prev => Math.max(prev - 1, 1)); window.scrollTo(0,0); }}
                 disabled={currentPage === 1}
-                className="p-2.5 hover:bg-slate-50 disabled:opacity-30 cursor-pointer transition-colors"
+                className="p-2 hover:bg-slate-50 disabled:opacity-20 transition-colors cursor-pointer"
               >
-                <ChevronLeft size={20} />
+                <ChevronLeft size={18} />
               </button>
               
-              <div className="flex">
+              <div className="flex px-2">
                 {[...Array(totalPages)].map((_, i) => {
                   const p = i + 1;
-                  if (p === 1 || p === totalPages || (p >= currentPage - 1 && p <= currentPage + 1)) {
-                    return (
-                      <button
-                        key={p}
-                        onClick={() => { setCurrentPage(p); window.scrollTo(0,0); }}
-                        className={`w-10 h-10 text-[11px] font-black transition-all cursor-pointer ${
-                          currentPage === p ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    );
+                  if (totalPages > 5 && (p !== 1 && p !== totalPages && (p < currentPage - 1 || p > currentPage + 1))) {
+                    if (p === currentPage - 2 || p === currentPage + 2) return <span key={p} className="px-1 text-slate-300 self-center">...</span>;
+                    return null;
                   }
-                  if (p === currentPage - 2 || p === currentPage + 2) return <span key={p} className="w-6 text-center text-slate-300 self-center font-bold">...</span>;
-                  return null;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => { setCurrentPage(p); window.scrollTo(0,0); }}
+                      className={`w-8 h-8 md:w-9 md:h-9 rounded-lg text-[11px] font-bold transition-all mx-0.5 cursor-pointer ${
+                        currentPage === p ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
                 })}
               </div>
 
               <button 
                 onClick={() => { setCurrentPage(prev => Math.min(prev + 1, totalPages)); window.scrollTo(0,0); }}
                 disabled={currentPage === totalPages}
-                className="p-2.5 hover:bg-slate-50 disabled:opacity-30 cursor-pointer transition-colors"
+                className="p-2 hover:bg-slate-50 disabled:opacity-20 transition-colors cursor-pointer"
               >
-                <ChevronRight size={20} />
+                <ChevronRight size={18} />
               </button>
-            </nav>
+            </div>
           </div>
         )}
       </main>
