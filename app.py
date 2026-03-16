@@ -13,26 +13,29 @@ CORS(app)
 base_path = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(base_path, 'table.csv')
 
+# --- নতুন যুক্ত করা এন্ডপয়েন্ট ক্রন-জবের জন্য ---
+@app.route('/api/ping')
+def ping():
+    """এটি শুধু সার্ভারকে জাগিয়ে রাখার জন্য, cron-job.org এ এই লিঙ্কটি দিন"""
+    return "Server is alive!", 200
+
 def clean_value(val):
     """টেক্সট থেকে বাড়তি কোটেশন বা ব্র্যাকেট সরানোর ফাংশন"""
     if val is None or str(val).lower() == "nan" or val == "":
         return "N/A"
     s = str(val).strip()
-    # শুরুর এবং শেষের কোটেশন বা থার্ড ব্র্যাকেট সরানো
     s = re.sub(r'^["\'\[]+|["\'\]]+$', '', s)
     return s
 
 def extract_images(raw_data):
     """CSV এর ইমেজ কলাম থেকে শুধু URL গুলোর লিস্ট বের করার ফাংশন"""
+    default_img = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000"
     if not raw_data or str(raw_data).lower() == "nan":
-        return ["https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000"]
+        return [default_img]
     
-    # রেগুলার এক্সপ্রেশন দিয়ে সব http লিঙ্ক বের করা
     links = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', str(raw_data))
     
-    if not links:
-        return ["https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000"]
-    return links
+    return links if links else [default_img]
 
 @app.route('/')
 def home():
@@ -41,19 +44,15 @@ def home():
 @app.route('/api/properties')
 def get_properties():
     try:
-        # CSV ফাইল লোড করা
         if not os.path.exists(csv_path):
             return jsonify({"error": "table.csv not found!"}), 404
 
-        # ডাটা টাইপ এরর এড়াতে সব লো-ইডেক্সিং এবং টাইপ চেক করা হয়েছে
+        # ডাটা টাইপ এরর এড়াতে এবং মেমোরি বাঁচাতে ডাটা রিড
         df = pd.read_csv(csv_path)
-        
-        # NaN ভ্যালুগুলোকে None (JSON এ null) দিয়ে রিপ্লেস করা
         df = df.replace({np.nan: None}) 
         
         properties = []
         
-        # CSV এর প্রতিটি রো প্রসেস করা হচ্ছে
         for index, row in df.iterrows():
             properties.append({
                 "id": clean_value(row.get('uprn', index)),
@@ -70,12 +69,16 @@ def get_properties():
                 "description": clean_value(row.get('description', 'No detailed description available.'))
             })
         
+        # যদি কোন ডাটা না থাকে
+        if not properties:
+            return jsonify({"message": "No data available", "data": []}), 200
+
         return jsonify(properties)
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error: {e}") # Render লগে এরর প্রিন্ট হবে
+        return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
 
 if __name__ == '__main__':
-    # Render বা ক্লাউড সার্ভারের জন্য ডাইনামিক পোর্ট কনফিগারেশন
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
