@@ -6,10 +6,10 @@ import numpy as np
 import re
 
 app = Flask(__name__)
-# CORS এনাবেল করা হয়েছে যাতে Vercel থেকে রিকোয়েস্ট আসতে পারে
+# CORS এনাবেল করা হয়েছে যাতে Vercel/Frontend থেকে ডাটা রিকোয়েস্ট সফল হয়
 CORS(app)
 
-# ফাইল পাথ ঠিক করা (Render এর জন্য নিরাপদ)
+# ফাইল পাথ ঠিক করা (লোকাল এবং Render সার্ভার উভয়ের জন্য নিরাপদ)
 base_path = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(base_path, 'table.csv')
 
@@ -45,15 +45,16 @@ def get_properties():
         if not os.path.exists(csv_path):
             return jsonify({"error": "table.csv not found!"}), 404
 
+        # ডাটা টাইপ এরর এড়াতে সব লো-ইডেক্সিং এবং টাইপ চেক করা হয়েছে
         df = pd.read_csv(csv_path)
-        # NaN ভ্যালুগুলোকে খালি স্ট্রিং দিয়ে রিপ্লেস করা
+        
+        # NaN ভ্যালুগুলোকে None (JSON এ null) দিয়ে রিপ্লেস করা
         df = df.replace({np.nan: None}) 
         
         properties = []
         
-        # ১,০০০ রো প্রসেস করা হচ্ছে
+        # CSV এর প্রতিটি রো প্রসেস করা হচ্ছে
         for index, row in df.iterrows():
-            # আপনার CSV কলামের নাম অনুযায়ী ডাটা নেওয়া হচ্ছে
             properties.append({
                 "id": clean_value(row.get('uprn', index)),
                 "title": clean_value(row.get('property_title', 'Residential Property')),
@@ -75,6 +76,6 @@ def get_properties():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Render এ ডিপ্লয় করার সময় PORT এনভায়রনমেন্ট ভ্যারিয়েবল প্রয়োজন হয়
+    # Render বা ক্লাউড সার্ভারের জন্য ডাইনামিক পোর্ট কনফিগারেশন
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
