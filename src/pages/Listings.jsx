@@ -43,27 +43,31 @@ const Listings = () => {
   };
 
   useEffect(() => {
-    // লোকালহোস্ট এবং ভার্সেল - উভয় জায়গার জন্য ডাইনামিক ইউআরএল
-    const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://127.0.0.1:5000";
-    const API_ENDPOINT = `${BACKEND_URL}/api/properties`;
+    // ১. ব্যাকএন্ড ইউআরএল নির্ধারণ (স্ল্যাশ হ্যান্ডেলিং সহ)
+    const base_url = import.meta.env.VITE_BACKEND_URL || "";
     
-    console.log("Fetching data from:", API_ENDPOINT);
+    // ডাবল স্ল্যাশ (//) এড়ানোর জন্য ক্লিনআপ লজিক
+    const clean_url = base_url.endsWith('/') ? base_url.slice(0, -1) : base_url;
+    const API_ENDPOINT = clean_url ? `${clean_url}/api/properties` : "/api/properties";
+    
+    console.log("System Syncing with:", API_ENDPOINT);
 
-    setLoading(true);
-    fetch(API_ENDPOINT)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(API_ENDPOINT);
+        if (!res.ok) throw new Error(`Server Response: ${res.status}`);
+        const data = await res.json();
         setProperties(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Connection Refused:", err.message);
+        // যদি রেন্ডার ঘুমিয়ে থাকে, তবে সরাসরি লিঙ্কে রিকোয়েস্ট পাঠাতে পারেন
+      } finally {
         setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Fetch Connection Error:", err.message);
-        setLoading(false);
-        // যদি লোকালহোস্টে এরর দেয়, তবে কনসোলে চেক করুন আপনার app.py রান আছে কিনা
-      });
+      }
+    };
+
+    fetchData();
   }, []);
 
   const filteredData = properties.filter(p => 
@@ -83,6 +87,7 @@ const Listings = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD] pb-12 text-slate-900 font-sans">
+      {/* Header Section */}
       <div className="bg-white border-b border-slate-100 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -165,14 +170,25 @@ const Listings = () => {
           )}
         </div>
 
+        {/* Empty State */}
         {!loading && filteredData.length === 0 && (
-          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm">
-            <Search className="mx-auto text-slate-200 mb-4" size={48} />
-            <h3 className="text-lg font-bold text-slate-800">No properties found</h3>
-            <p className="text-slate-500 text-sm">Make sure your backend is running on port 5000.</p>
+          <div className="text-center py-20 bg-white rounded-3xl border border-slate-100 shadow-sm flex flex-col items-center">
+            <Loader2 className="animate-spin text-blue-500 mb-4" size={32} />
+            <h3 className="text-lg font-bold text-slate-800">Syncing with Render...</h3>
+            <p className="text-slate-500 text-sm max-w-xs mx-auto">
+              Render's free tier sleeps after 15 mins. This might take 30-60 seconds to wake up.
+            </p>
+            <a 
+              href={import.meta.env.VITE_BACKEND_URL + "/api/properties"} 
+              target="_blank" 
+              className="mt-4 text-xs text-blue-600 font-bold uppercase underline"
+            >
+              Wake up server manually
+            </a>
           </div>
         )}
 
+        {/* Pagination */}
         {!loading && totalPages > 1 && (
           <div className="mt-16 flex items-center justify-center gap-3">
             <button onClick={() => paginate(currentPage - 1)} disabled={currentPage === 1} className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-30 transition-all shadow-sm">
