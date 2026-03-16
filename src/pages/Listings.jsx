@@ -91,7 +91,8 @@ const Listings = () => {
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] pb-10 md:pb-20 text-slate-900 font-sans selection:bg-indigo-100">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
+      {/* পরিবর্তন: এখানে z-50 থেকে কমিয়ে z-30 করা হয়েছে যাতে সাইডবার (z-50) এটার উপরে থাকে */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 md:z-40">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-5">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="flex items-center gap-3 md:gap-4">
@@ -129,7 +130,7 @@ const Listings = () => {
 
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 mt-6 md:mt-8">
         
-        {/* Bordered Stats Bar - No Shadows, Icon Aligned */}
+        {/* Bordered Stats Bar */}
         <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-px bg-slate-200 border border-slate-200 rounded-2xl overflow-hidden shadow-none">
           <div className="bg-white px-6 py-5 flex items-center gap-4">
             <div className="p-2.5 bg-slate-50 rounded-lg text-slate-400 border border-slate-100">
@@ -177,7 +178,7 @@ const Listings = () => {
                     </span>
                     {isVerified && (
                       <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 uppercase tracking-widest">
-                        <CheckCircle2 size={10} /> Certified
+                        <CheckCircle2 size={10} /> Verified
                       </span>
                     )}
                   </div>
@@ -239,7 +240,7 @@ const Listings = () => {
         {!loading && filteredData.length > itemsPerPage && (
           <div className="mt-12 md:mt-16 flex flex-col md:flex-row items-center justify-between gap-6 border-t border-slate-200 pt-8">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Index Segment <span className="text-slate-900">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredData.length)}</span> of {filteredData.length}
+             Viewing <span className="text-slate-900">{indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredData.length)}</span> of {filteredData.length}
             </p>
 
             <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-none">

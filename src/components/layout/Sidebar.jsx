@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -7,29 +7,77 @@ import {
   Search, 
   Menu, 
   X,
-  Activity
+  Activity,
+  Clock
 } from 'lucide-react';
 
-const SidebarItem = ({ icon, label, path, active, onClick }) => (
-  <Link 
-    to={path} 
-    onClick={onClick}
-    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
-      active 
-        ? 'bg-blue-600 text-white' 
-        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-    }`}
-  >
-    <span className={active ? 'text-white' : 'text-slate-400'}>{icon}</span>
-    <span className={`text-[13px] font-medium tracking-tight ${active ? 'font-semibold' : ''}`}>
-      {label}
-    </span>
-  </Link>
-);
+const SidebarItem = ({ icon, label, path, active, onClick, loading }) => {
+  if (loading) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <div className="w-5 h-5 bg-slate-100 rounded animate-pulse"></div>
+        <div className="h-4 bg-slate-100 rounded w-24 animate-pulse"></div>
+      </div>
+    );
+  }
+
+  return (
+    <Link 
+      to={path} 
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 ${
+        active 
+          ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' 
+          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+      }`}
+    >
+      <span className={active ? 'text-white' : 'text-slate-400'}>{icon}</span>
+      <span className={`text-[13px] font-medium tracking-tight ${active ? 'font-semibold' : ''}`}>
+        {label}
+      </span>
+    </Link>
+  );
+};
 
 const Sidebar = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [ukTime, setUkTime] = useState('');
+  const [ukDate, setUkDate] = useState('');
+
+  // UK Time Logic
+  useEffect(() => {
+    const updateTime = () => {
+      const options = {
+        timeZone: 'Europe/London',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true,
+      };
+      const dateOptions = {
+        timeZone: 'Europe/London',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      };
+      
+      const now = new Date();
+      setUkTime(now.toLocaleTimeString('en-GB', options));
+      setUkDate(now.toLocaleDateString('en-GB', dateOptions));
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulated loading effect
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -42,7 +90,7 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* মোবাইল হেডার (শুধু ফোনে দেখাবে) */}
+      {/* মোবাইল হেডার */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-100 px-5 flex items-center justify-between z-50">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -77,34 +125,59 @@ const Sidebar = () => {
             </div>
             <div>
               <h1 className="text-[15px] font-bold text-slate-900 leading-none">PropheticAI</h1>
-              <p className="text-[9px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">DSS Platform</p>
+              {/* <p className="text-[9px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">DSS Platform</p> */}
             </div>
           </div>
         </div>
         
         {/* মেনু আইটেমসমূহ */}
         <nav className="flex-1 px-4 space-y-1">
-          {menuItems.map((item) => (
-            <SidebarItem 
-              key={item.path}
-              icon={item.icon}
-              label={item.label}
-              path={item.path}
-              active={location.pathname === item.path}
-              onClick={() => setIsOpen(false)}
-            />
-          ))}
+          {loading ? (
+            [...Array(4)].map((_, i) => (
+              <SidebarItem key={i} loading={true} />
+            ))
+          ) : (
+            menuItems.map((item) => (
+              <SidebarItem 
+                key={item.path}
+                icon={item.icon}
+                label={item.label}
+                path={item.path}
+                active={location.pathname === item.path}
+                onClick={() => setIsOpen(false)}
+                loading={false}
+              />
+            ))
+          )}
         </nav>
 
-        {/* নিচের স্ট্যাটাস বার */}
+        {/* নিচের স্ট্যাটাস বার - Live UK Time & Date */}
         <div className="p-4 border-t border-slate-50 bg-slate-50/30">
-          <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-100 rounded-xl">
-            <div className="relative">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-              <div className="absolute inset-0 w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
+          {loading ? (
+            <div className="h-14 bg-white border border-slate-100 rounded-xl animate-pulse"></div>
+          ) : (
+            <div className="flex flex-col gap-1.5 px-3 py-3 bg-white border border-slate-100 rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                   <div className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Live UK Sync</span>
+                </div>
+                <Clock size={12} className="text-slate-300" />
+              </div>
+              
+              <div className="flex flex-col">
+                <span className="text-[13px] font-bold text-slate-800 tabular-nums">
+                  {ukTime}
+                </span>
+                <span className="text-[10px] font-medium text-slate-400">
+                  {ukDate}
+                </span>
+              </div>
             </div>
-            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">Live Sync</span>
-          </div>
+          )}
         </div>
       </aside>
     </>
