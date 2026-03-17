@@ -4,7 +4,7 @@ import {
   ChevronLeft, ChevronRight, AlertTriangle, 
   Target, Fingerprint, Activity, Info
 } from 'lucide-react';
-import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Dot } from 'recharts';
+import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
 import Papa from 'papaparse';
 
 const Skeleton = ({ className }) => (
@@ -23,7 +23,7 @@ const RiskAlerts = () => {
   useEffect(() => {
     const fetchCSVData = async () => {
       try {
-        const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
+        const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
         const response = await fetch(`${base_url.replace(/\/$/, '')}/api/risk-data-csv`);
         const csvText = await response.text();
 
@@ -35,7 +35,6 @@ const RiskAlerts = () => {
             if (results.data) {
               setTotalParsed(results.data.length); 
               
-              // কলাম ম্যাপিং চেক (Backend-এর কলাম নেম অনুযায়ী)
               const validPrices = results.data
                 .map(r => parseFloat(r.price) || 0)
                 .filter(p => p > 0);
@@ -46,7 +45,6 @@ const RiskAlerts = () => {
 
               const processedItems = results.data.map((row, index) => {
                 const price = parseFloat(row.price) || 0;
-                // Backend থেকে ecp_rating আসছে, সেটা চেক করা হচ্ছে
                 const ecp = String(row.ecp_rating || "N/A").toUpperCase();
                 const uprn = row.uprn && row.uprn !== "N/A" ? row.uprn : `ASSET-${1000 + index}`;
                 const tenure = String(row.tenure || "N/A").toLowerCase();
@@ -68,7 +66,7 @@ const RiskAlerts = () => {
                   problemParts.push("leasehold depreciation risk");
                 }
 
-                // Filtering: রিস্ক স্কোর অন্তত ২০ হলে দেখাবে (সব প্রপার্টি দেখতে চাইলে এটি ০ করে দিন)
+                // Filtering: রিস্ক স্কোর অন্তত ২০ হলে দেখাবে
                 if (riskScore >= 20 || searchTerm !== "") {
                   return {
                     id: uprn,
@@ -121,7 +119,7 @@ const RiskAlerts = () => {
               <ShieldAlert size={18} />
               <span className="text-[10px] uppercase tracking-[0.3em]">Prophetic Intelligence</span>
             </div>
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight italic">Portfolio Audit</h1>
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Portfolio Audit</h1>
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                System Live: Monitoring {totalParsed} Assets
@@ -181,7 +179,7 @@ const RiskAlerts = () => {
                   <BrainCircuit size={24} />
                 </div>
                 <div className="space-y-3">
-                  <h2 className="text-xl font-black uppercase tracking-tighter text-slate-900 italic">Audit AI Logic</h2>
+                  <h2 className="text-xl font-black uppercase tracking-tighter text-slate-900">Audit AI Logic</h2>
                   <p className="text-slate-500 text-[11px] font-bold leading-relaxed uppercase tracking-wider">
                     The engine flags assets where market price exceeds the average by <span className="text-rose-600">25%</span> or EPC ratings fall below <span className="text-rose-600">Grade D</span>. Leasehold properties are given a secondary risk weighting.
                   </p>
@@ -189,7 +187,7 @@ const RiskAlerts = () => {
              </div>
              <div className="pt-8 border-t border-slate-50">
                 <button className="w-full py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all cursor-pointer">
-                   Download Audit PDF
+                    Download Audit PDF
                 </button>
              </div>
           </div>
@@ -200,11 +198,11 @@ const RiskAlerts = () => {
           <div className="flex items-center justify-between px-2">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Vulnerability Queue</h3>
             <div className="flex items-center gap-5">
-               <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20" disabled={currentPage === 1}>
+               <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20 cursor-pointer" disabled={currentPage === 1}>
                  <ChevronLeft size={24} />
                </button>
                <span className="text-[10px] font-black text-slate-900 uppercase tabular-nums">Page {currentPage} of {totalPages || 1}</span>
-               <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20" disabled={currentPage === totalPages}>
+               <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20 cursor-pointer" disabled={currentPage === totalPages}>
                  <ChevronRight size={24} />
                </button>
             </div>
@@ -218,7 +216,7 @@ const RiskAlerts = () => {
                     <span className={`text-[8px] font-black uppercase px-3 py-1.5 rounded-full ${item.bgColor} border border-black/5`} style={{ color: item.color }}>
                       {item.riskLevel}
                     </span>
-                    <span className="text-lg font-black text-slate-900 tracking-tighter italic">£{item.val}K</span>
+                    <span className="text-lg font-black text-slate-900 tracking-tighter">£{item.val}K</span>
                   </div>
                   
                   <h4 className="text-[13px] font-black uppercase text-slate-800 mb-5 line-clamp-1">{item.name}</h4>
@@ -256,7 +254,7 @@ const RiskAlerts = () => {
             
             <div className="p-8 space-y-8">
               <div>
-                <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">{selectedProperty.name}</h2>
+                <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{selectedProperty.name}</h2>
                 <div className="flex items-center gap-2 mt-2">
                   <AlertTriangle size={14} className="text-rose-500" />
                   <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Urgent Mitigation Recommended</p>
@@ -298,7 +296,7 @@ const RiskAlerts = () => {
 const StatCard = ({ label, value, color }) => (
   <div className="bg-white border border-slate-100 px-6 py-4 rounded-3xl text-right min-w-[140px] shadow-sm">
     <p className="text-[8px] font-black text-slate-400 uppercase mb-1 tracking-widest">{label}</p>
-    <p className={`text-2xl font-black ${color} tabular-nums italic`}>{value}</p>
+    <p className={`text-2xl font-black ${color} tabular-nums`}>{value}</p>
   </div>
 );
 
