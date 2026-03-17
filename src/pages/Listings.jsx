@@ -7,7 +7,7 @@ import {
   CheckCircle2, ListFilter, Bed, Activity
 } from 'lucide-react';
 
-// হাইলাইট ফাংশন: সার্চ টার্মের সাথে মিললে টেক্সট হাইলাইট করবে
+// হাইলাইট ফাংশন (আগের মতোই)
 const Highlight = ({ text, highlight }) => {
   if (!highlight || !highlight.trim()) return <span>{text}</span>;
   const regex = new RegExp(`(${highlight})`, 'gi');
@@ -50,7 +50,7 @@ const Listings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
 
-  // Stability Calculation Logic
+  // Stability Calculation Logic (আগের মতোই)
   const calculateStability = (prop) => {
     let score = 70; 
     const epc = String(prop.ecp_rating || 'N/A').toUpperCase();
@@ -70,16 +70,22 @@ const Listings = () => {
       setLoading(true);
       setError(false);
       try {
-        const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
-        const res = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
+        // লজিক ফিক্স: আপনার সেভ করা Backend_URL এনভায়রনমেন্ট ভেরিয়েবল ব্যবহার করা হয়েছে
+        const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
+        const cleanUrl = base_url.replace(/\/$/, '');
+        
+        const res = await fetch(`${cleanUrl}/api/properties`);
         if (!res.ok) throw new Error("Fetch failed");
+        
         const data = await res.json();
+        
+        // আপনার নতুন ব্যাকএন্ড যেহেতু 'id' ফিল্ড দিচ্ছে, সরাসরি সেটি ব্যবহার করছি
         setProperties(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Connection failed:", err);
         setError(true);
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 600);
       }
     };
     fetchData();
@@ -87,7 +93,8 @@ const Listings = () => {
 
   const filteredData = properties.filter(p => 
     (p.address || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (p.property_title || "").toLowerCase().includes(searchTerm.toLowerCase())
+    (p.property_title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (p.uprn || "").toString().includes(searchTerm)
   );
 
   const totalInventory = filteredData.length;
@@ -102,7 +109,6 @@ const Listings = () => {
 
   return (
     <div className="min-h-screen bg-[#FBFBFC] pb-20 text-slate-900 font-sans">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -122,10 +128,10 @@ const Listings = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input 
               type="text" 
-              placeholder="Search by location or asset name..." 
+              placeholder="Search by location or UPRN..." 
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-11 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-indigo-600 outline-none transition-all font-medium cursor-text"
+              className="w-full pl-11 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-indigo-600 outline-none transition-all font-medium"
             />
             {searchTerm && (
               <button 
@@ -140,7 +146,6 @@ const Listings = () => {
       </header>
 
       <main className="max-w-[1440px] mx-auto px-6 mt-8">
-        {/* Stats Section */}
         {!loading && (
           <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-px bg-slate-200 border border-slate-200 rounded-2xl overflow-hidden">
             <div className="bg-white p-5 flex items-center gap-4">
@@ -167,18 +172,18 @@ const Listings = () => {
           </div>
         )}
 
-        {/* Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {loading ? [...Array(8)].map((_, i) => <SkeletonCard key={i} />) : 
             currentItems.map((prop) => {
               const stability = calculateStability(prop);
               const imgUrl = prop.property_images?.[0];
+              const pId = prop.id; // ব্যাকএন্ড থেকে আসা ইউনিক আইডি
 
               return (
                 <div 
-                  key={prop.id} 
+                  key={pId} 
                   className="group bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-500 transition-all flex flex-col cursor-pointer"
-                  onClick={() => navigate(`/property/${prop.id}`)}
+                  onClick={() => navigate(`/property/${pId}`)}
                 >
                   <div className="relative h-52 bg-slate-50 overflow-hidden text-slate-500">
                     {imgUrl ? (
@@ -232,13 +237,13 @@ const Listings = () => {
                   
                   <div className="px-5 pb-5 grid grid-cols-2 gap-2 mt-auto">
                       <button 
-                        onClick={(e) => { e.stopPropagation(); navigate(`/risks/${prop.id}`); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/risks/${pId}`); }}
                         className="py-2.5 rounded-xl text-[10px] font-black uppercase border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         <ShieldAlert size={14}/> Audit
                       </button>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); navigate(`/analysis/${prop.id}`); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/analysis/${pId}`); }}
                         className="py-2.5 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white hover:bg-indigo-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                       >
                         Insights <ArrowUpRight size={14}/>
@@ -250,7 +255,6 @@ const Listings = () => {
           }
         </div>
 
-        {/* Empty State */}
         {!loading && filteredData.length === 0 && (
           <div className="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl">
             <SearchX size={40} className="mx-auto text-slate-200 mb-4" />
@@ -264,7 +268,6 @@ const Listings = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {!loading && totalPages > 1 && (
           <div className="mt-16 flex items-center justify-center gap-2">
             <button 

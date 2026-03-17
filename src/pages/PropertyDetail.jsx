@@ -28,15 +28,28 @@ const PropertyDetail = () => {
 
   useEffect(() => {
     const fetchDetails = async () => {
+      setLoading(true);
       try {
-        const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
+        // লজিক ফিক্স: এনভায়রনমেন্ট ভেরিয়েবল হ্যান্ডলিং
+        const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
         const response = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
+        
+        if (!response.ok) throw new Error("Fetch failed");
+        
         const data = await response.json();
-        const selected = data.find(p => String(p.id) === String(id));
-        if (selected) setProperty(selected);
-        setLoading(false);
+        
+        // লজিক ফিক্স: uprn অথবা id চেক করা হচ্ছে (string format-এ)
+        const selected = Array.isArray(data) ? data.find(p => 
+          String(p.uprn || "").trim() === String(id).trim() || 
+          String(p.id || "").trim() === String(id).trim()
+        ) : null;
+
+        if (selected) {
+          setProperty(selected);
+        }
       } catch (err) {
         console.error("Fetch error:", err);
+      } finally {
         setLoading(false);
       }
     };
@@ -59,24 +72,28 @@ const PropertyDetail = () => {
   }
 
   if (!property) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
-      <p className="text-slate-400 mb-4 font-medium italic">Property information unavailable</p>
-      <button onClick={() => navigate(-1)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold transition-transform active:scale-95">Return to Listings</button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white p-6 text-center">
+      <div className="bg-slate-50 w-16 h-16 rounded-2xl flex items-center justify-center mb-6 text-slate-300">
+          <Home size={32} />
+      </div>
+      <p className="text-slate-800 mb-4 font-bold text-lg">Property not found</p>
+      <p className="text-slate-400 mb-8 text-sm max-w-xs">We couldn't locate the asset details for ID: {id}</p>
+      <button onClick={() => navigate('/listings')} className="px-8 py-3 bg-slate-900 text-white rounded-xl text-xs font-bold transition-transform active:scale-95 cursor-pointer">Return to Listings</button>
     </div>
   );
 
   // --- Investment Analysis Logic ---
   const getRadarData = () => {
-    const priceRaw = property.price?.replace(/[^0-9]/g, '') || "500000";
-    const priceNum = parseInt(priceRaw);
-    const epc = property.ecp_rating || 'C';
+    const yieldVal = property.yield_num || 5;
+    const epc = String(property.ecp_rating || 'C').toUpperCase();
+    const tenure = String(property.tenure || '').toLowerCase();
     
     return [
-      { subject: 'Potential Yield', A: priceNum < 400000 ? 95 : priceNum < 1000000 ? 80 : 65 },
+      { subject: 'Potential Yield', A: Math.min(yieldVal * 12, 95) },
       { subject: 'Energy Score', A: epc.includes('A') ? 98 : epc.includes('B') ? 85 : 70 },
-      { subject: 'Market Stability', A: property.tenure?.toLowerCase().includes('freehold') ? 92 : 78 },
-      { subject: 'Rental Demand', A: property.bedrooms <= 3 ? 90 : 75 },
-      { subject: 'Capital Growth', A: priceNum > 1500000 ? 95 : 82 },
+      { subject: 'Market Stability', A: tenure.includes('freehold') ? 92 : 78 },
+      { subject: 'Rental Demand', A: (property.bedrooms || 0) <= 3 ? 90 : 75 },
+      { subject: 'Capital Growth', A: 82 },
     ];
   };
 
@@ -90,7 +107,7 @@ const PropertyDetail = () => {
       {/* Header / Nav */}
       <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="group flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-semibold text-sm">
+          <button onClick={() => navigate(-1)} className="group flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-semibold text-sm cursor-pointer">
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform"/> <span>Properties</span>
           </button>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
@@ -110,14 +127,14 @@ const PropertyDetail = () => {
             <div className="relative aspect-video bg-slate-100 rounded-3xl overflow-hidden border border-slate-200">
               <img 
                 src={images[currentImg]} 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover transition-opacity duration-500" 
                 alt="Property View"
               />
               {images.length > 1 && (
                 <div className="absolute inset-x-6 bottom-6 flex justify-between items-center">
                   <div className="flex gap-2 bg-white/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200">
-                    <button onClick={() => setCurrentImg(p => (p - 1 + images.length) % images.length)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ChevronLeft size={18}/></button>
-                    <button onClick={() => setCurrentImg(p => (p + 1) % images.length)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ChevronRight size={18}/></button>
+                    <button onClick={() => setCurrentImg(p => (p - 1 + images.length) % images.length)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"><ChevronLeft size={18}/></button>
+                    <button onClick={() => setCurrentImg(p => (p + 1) % images.length)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"><ChevronRight size={18}/></button>
                   </div>
                   <div className="bg-slate-900 px-3 py-1.5 rounded-lg text-white text-[10px] font-bold">
                     IMAGE {currentImg + 1} / {images.length}
@@ -140,7 +157,7 @@ const PropertyDetail = () => {
                    </span>
                 </div>
                 <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight mb-3">
-                  {property.property_title}
+                  {property.property_title || "Market Asset"}
                 </h1>
                 <p className="flex items-start gap-2 text-slate-400 text-sm font-medium">
                   <MapPin size={16} className="shrink-0 text-slate-400 mt-0.5" /> {property.address}

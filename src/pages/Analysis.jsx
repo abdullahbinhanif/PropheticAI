@@ -8,26 +8,42 @@ import {
 import { Info, Activity, Target, ShieldCheck, Zap, ArrowLeft, Building2, TrendingUp, Globe, HeartPulse } from 'lucide-react';
 
 const Analysis = () => {
-  const { id } = useParams();
+  const { id } = useParams(); 
   const navigate = useNavigate();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // যদি ID না থাকে তবে লিস্টিং পেজে পাঠিয়ে দেওয়া ভালো
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
     const fetchProperty = async () => {
       setLoading(true);
       try {
-        const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
+        // এনভায়রনমেন্ট ভেরিয়েবল চেক (VITE_ prefix সহ বা ছাড়া)
+        const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
         const response = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
+        
+        if (!response.ok) throw new Error("Network response was not ok");
+        
         const data = await response.json();
         
+        // আইডি ম্যাচিং লজিক (UPRN এবং ID উভয়ই চেক করা হচ্ছে)
         const selected = Array.isArray(data) ? data.find(p => 
-          String(p.id).trim() === String(id).trim()
+          String(p.uprn || "").trim() === String(id).trim() || 
+          String(p.id || "").trim() === String(id).trim()
         ) : null;
         
-        if (selected) setProperty(selected);
+        if (selected) {
+          setProperty(selected);
+        } else {
+          console.warn(`Property with ID ${id} not found in the list.`);
+        }
       } catch (err) {
-        console.error("Sync Error:", err);
+        console.error("Fetch Error:", err);
       } finally {
         setLoading(false);
       }
@@ -38,24 +54,24 @@ const Analysis = () => {
   const analysisData = useMemo(() => {
     if (!property) return null;
     
-    const yieldMatch = property.description?.match(/(\d+(\.\d+)?)\s*%/);
-    const yieldVal = yieldMatch ? parseFloat(yieldMatch[1]) : 5.8;
-    const priceVal = parseFloat(String(property.price).replace(/[^0-9.]/g, '')) || 0;
+    // ডাটা এক্সট্রাকশন লজিক
+    const yieldVal = property.yield_num || 0;
+    const priceVal = property.price_num || 0;
     const epc = String(property.ecp_rating || 'N/A').toUpperCase();
 
     const factorData = [
       { name: 'Income Strength', score: Math.min(yieldVal * 12, 98), fill: '#4f46e5' }, 
-      { name: 'Energy Standard', score: ['A', 'B', 'C'].includes(epc) ? 92 : 45, fill: '#10b981' },
+      { name: 'Energy Standard', score: ['A', 'B', 'C'].includes(epc[0]) ? 92 : 45, fill: '#10b981' },
       { name: 'Ownership Value', score: 78, fill: '#f59e0b' },
       { name: 'Resale Speed', score: priceVal < 700000 ? 85 : 55, fill: '#ec4899' },
     ];
 
-    // Radial Gauge Data for "Investment Health"
     const gaugeData = [{ value: 82, fill: '#4f46e5' }];
 
     return { factorData, gaugeData, yieldVal, epc, priceVal };
   }, [property]);
 
+  // লোডিং স্টেট
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="flex flex-col items-center">
@@ -65,12 +81,16 @@ const Analysis = () => {
     </div>
   );
 
+  // যদি প্রপার্টি না পাওয়া যায় (ভুল ID বা লিস্টিং থেকে না আসলে)
   if (!property) return (
     <div className="min-h-screen flex items-center justify-center bg-white p-6 text-center">
         <div className="max-w-xs space-y-4">
-            <h2 className="text-lg font-bold text-slate-800">Oops! We couldn't find this property.</h2>
-            <p className="text-sm text-slate-500">The property link might be broken or moved.</p>
-            <button onClick={() => navigate('/listings')} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl">Back to Search</button>
+            <div className="bg-slate-50 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 text-slate-300">
+                <Building2 size={32} />
+            </div>
+            <h2 className="text-lg font-bold text-slate-800">No Asset Selected</h2>
+            <p className="text-sm text-slate-500">Please select a property from the listings page to view its detailed analysis.</p>
+            <button onClick={() => navigate('/listings')} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-100 transition-transform active:scale-95 cursor-pointer">Back to Listings</button>
         </div>
     </div>
   );
@@ -97,8 +117,8 @@ const Analysis = () => {
             </p>
           </div>
           <div className="hidden md:flex items-center gap-3 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100">
-             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-             <span className="text-xs font-bold text-slate-700">Live Market Data Active</span>
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-bold text-slate-700">Live Market Data Active</span>
           </div>
         </div>
 
@@ -180,7 +200,7 @@ const Analysis = () => {
             </p>
           </section>
 
-          {/* Executive Summary Card (Now White/Grey Theme) */}
+          {/* Executive Summary Card */}
           <div className="lg:col-span-12 bg-white border-2 border-slate-100 rounded-[2.5rem] p-10 relative overflow-hidden">
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div className="space-y-6">
@@ -188,7 +208,7 @@ const Analysis = () => {
                   <TrendingUp size={14}/> Expert Recommendation
                 </div>
                 <h2 className="text-2xl md:text-4xl font-bold text-slate-900 leading-tight">
-                  A steady <span className="text-indigo-600 font-black">{analysisData.yieldVal}% annual return</span> makes this a strong contender for your portfolio.
+                  A steady <span className="text-indigo-600 font-black">{analysisData.yieldVal}% yield</span> makes this a strong contender for your portfolio.
                 </h2>
                 <p className="text-slate-500 text-base font-medium">
                   Based on current market trends, this property sits in the top tier of the local market. 
@@ -209,21 +229,11 @@ const Analysis = () => {
   );
 };
 
-// Helper Components
 const SummaryPoint = ({ label, value, detail }) => (
   <div className="space-y-1">
     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
     <p className="text-sm font-bold text-slate-800">{value}</p>
     <p className="text-[10px] text-slate-400 font-medium">{detail}</p>
-  </div>
-);
-
-const TooltipComponent = ({ text }) => (
-  <div className="group relative">
-    <Info size={16} className="text-slate-300 cursor-help hover:text-indigo-600" />
-    <div className="absolute right-0 bottom-full mb-3 w-56 p-4 bg-slate-900 text-white text-[10px] leading-relaxed rounded-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-xl">
-      {text}
-    </div>
   </div>
 );
 

@@ -22,8 +22,12 @@ const Dashboard = () => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
+        // লজিক ফিক্স: এনভায়রনমেন্ট ভেরিয়েবল হ্যান্ডলিং
+        const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
         const response = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
+        
+        if (!response.ok) throw new Error("Connection failed");
+        
         const data = await response.json();
         
         if (Array.isArray(data)) {
@@ -33,6 +37,7 @@ const Dashboard = () => {
           setConnStatus('Degraded');
         }
       } catch (err) {
+        console.error("Dashboard Sync Error:", err);
         setConnStatus('Offline');
       } finally {
         setTimeout(() => setLoading(false), 800);
@@ -42,12 +47,16 @@ const Dashboard = () => {
   }, []);
 
   const stats = useMemo(() => {
-    if (!properties.length) return null;
+    if (!properties || properties.length === 0) return {
+      total: 0, avgYield: "0.00", region: "N/A", risk: "Conservative", riskColor: "text-slate-400", 
+      biasText: "Stable", biasColor: "text-slate-400", prices: [], dataPoints: 0
+    };
 
     const prices = properties.map(p => p.price_num || 0);
     const yields = properties.map(p => p.yield_num || 0).filter(y => y > 0);
     const avgYield = yields.length ? yields.reduce((a, b) => a + b, 0) / yields.length : 0;
     
+    // ডাইনামিক রিস্ক প্রোফাইল লজিক
     const riskLevel = avgYield > 12 ? "High Return" : avgYield > 6 ? "Balanced" : "Conservative";
     const riskColor = riskLevel === "High Return" ? "text-rose-600" : riskLevel === "Balanced" ? "text-amber-600" : "text-emerald-600";
 
@@ -55,12 +64,14 @@ const Dashboard = () => {
         const parts = p.address?.split(',');
         return parts ? parts[parts.length - 1].trim() : "Unknown";
     });
-    const modeRegion = [...regions].sort((a,b) => 
-        regions.filter(v => v===a).length - regions.filter(v => v===b).length
-    ).pop();
+    
+    // মোড ক্যালকুলেশন (সবচেয়ে বেশি কোন এলাকা আছে)
+    const regionCounts = regions.reduce((acc, r) => ({ ...acc, [r]: (acc[r] || 0) + 1 }), {});
+    const modeRegion = Object.keys(regionCounts).reduce((a, b) => regionCounts[a] > regionCounts[b] ? a : b, "N/A");
 
-    // Human-like Market Bias
-    const growth = prices[prices.length - 1] - prices[0];
+    // মার্কেট বায়াস (Growth analysis)
+    const validPrices = prices.filter(p => p > 0);
+    const growth = validPrices.length > 1 ? validPrices[validPrices.length - 1] - validPrices[0] : 0;
     const biasText = growth > 0 ? "Upward Trend" : growth < 0 ? "Price Correction" : "Stable Market";
     const biasColor = growth > 0 ? "text-emerald-600" : growth < 0 ? "text-rose-600" : "text-slate-500";
 
@@ -72,20 +83,23 @@ const Dashboard = () => {
       riskColor,
       biasText,
       biasColor,
-      prices: prices.slice(-15),
+      prices: validPrices.slice(-15),
       dataPoints: properties.length * 8
     };
   }, [properties]);
 
   const chartConfig = useMemo(() => {
     let filtered = properties.filter(p => 
-      p.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      p.uprn?.toString().includes(searchTerm)
+      (p.property_title || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (p.uprn || "").toString().includes(searchTerm) ||
+      (p.address || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
+    
     let sliceCount = timeRange === '1M' ? 10 : timeRange === '6M' ? 30 : filtered.length;
     const displayData = filtered.slice(-sliceCount);
+    
     return {
-      labels: displayData.map(p => p.property_title?.substring(0, 12) || p.uprn),
+      labels: displayData.map(p => p.property_title?.substring(0, 12) || p.uprn || "Node"),
       prices: displayData.map(p => p.price_num || 0)
     };
   }, [properties, searchTerm, timeRange]);
@@ -99,7 +113,7 @@ const Dashboard = () => {
       pointRadius: chartConfig.prices.length > 40 ? 0 : 3,
       pointBackgroundColor: '#fff',
       fill: true,
-      backgroundColor: 'rgba(79, 70, 229, 0.02)',
+      backgroundColor: 'rgba(79, 70, 229, 0.05)',
       tension: 0.4, 
     }]
   };
@@ -136,7 +150,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* 4-Column KPI Grid - Perfect Alignment */}
+        {/* 4-Column KPI Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border border-slate-200 rounded-none overflow-hidden">
           <KPICard loading={loading} label="Active Inventory" value={stats?.total} subText="Total properties tracked" sparkline={stats?.prices} trend="up" border />
           <KPICard loading={loading} label="Average Yield" value={`${stats?.avgYield}%`} subText="Annual return rate" sparkline={[5, 8, 7, 12, 10, 15]} trend="up" border />
@@ -149,7 +163,7 @@ const Dashboard = () => {
                   {stats?.risk === 'Conservative' ? <ShieldCheck size={20}/> : <AlertCircle size={20}/>}
                   <span className="text-2xl font-black tracking-tighter">{stats?.risk}</span>
                 </div>
-                <div className="text-[10px] font-bold text-slate-500">Based on yield volatility</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-2">Yield Volatility Model</div>
               </>
             )}
           </div>
@@ -170,7 +184,7 @@ const Dashboard = () => {
                   <button 
                     key={t} 
                     onClick={() => setTimeRange(t)} 
-                    className={`px-4 py-1 text-[10px] font-bold transition-all ${timeRange === t ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}
+                    className={`px-4 py-1 text-[10px] font-bold transition-all cursor-pointer ${timeRange === t ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}
                   >
                     {t}
                   </button>
@@ -178,7 +192,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="h-[400px] w-full border border-slate-200 p-6 bg-white">
+            <div className="h-[400px] w-full border border-slate-200 p-6 bg-white relative">
               {loading ? <Skeleton h="h-full" /> : <Line data={chartData} options={chartOptions} />}
             </div>
           </div>
@@ -197,7 +211,7 @@ const Dashboard = () => {
                   <p className="text-sm text-slate-500 leading-relaxed">
                     We've analyzed <span className="text-slate-900 font-bold">{stats?.total} assets</span> in this area. 
                     The local market shows a <span className="text-indigo-600 font-bold underline underline-offset-4">{stats?.biasText.toLowerCase()}</span>, 
-                    suggesting a {stats?.avgYield > 5 ? 'strong' : 'steady'} period for investors.
+                    suggesting a {parseFloat(stats?.avgYield) > 5 ? 'strong' : 'steady'} period for investors.
                   </p>
                 </div>
               )}
@@ -228,25 +242,29 @@ const KPICard = ({ label, value, subText, border, loading, trend, sparkline }) =
           </div>
         </div>
         <h3 className="text-3xl font-black text-slate-900 tracking-tighter py-2">{value || '---'}</h3>
-        {sparkline && (
+        {sparkline && sparkline.length > 0 && (
           <div className="h-8 flex items-end gap-1 mb-2">
-            {sparkline.map((v, i) => (
-              <div 
-                key={i} 
-                className={`flex-1 ${trend === 'up' ? 'bg-emerald-400' : 'bg-rose-400'}`} 
-                style={{ height: `${Math.max((v / Math.max(...sparkline)) * 100, 20)}%`, opacity: (i + 1) / sparkline.length }}
-              />
-            ))}
+            {sparkline.map((v, i) => {
+              const max = Math.max(...sparkline);
+              const height = max > 0 ? (v / max) * 100 : 20;
+              return (
+                <div 
+                  key={i} 
+                  className={`flex-1 ${trend === 'up' ? 'bg-emerald-400' : 'bg-rose-400'}`} 
+                  style={{ height: `${Math.max(height, 20)}%`, opacity: (i + 1) / sparkline.length }}
+                />
+              );
+            })}
           </div>
         )}
-        <div className="text-[10px] font-bold text-slate-400 uppercase">{subText}</div>
+        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{subText}</div>
       </>
     )}
   </div>
 );
 
 const DriverItem = ({ icon, label, score, color }) => (
-  <div className="flex items-center justify-between p-5 bg-white transition-colors hover:bg-slate-50">
+  <div className="flex items-center justify-between p-5 bg-white transition-colors hover:bg-slate-50 cursor-default">
     <div className="flex items-center gap-4">
       <div className="text-slate-400">{icon}</div>
       <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">{label}</span>
@@ -256,16 +274,25 @@ const DriverItem = ({ icon, label, score, color }) => (
 );
 
 const Skeleton = ({ h }) => (
-  <div className={`w-full ${h} bg-slate-50 animate-pulse`} />
+  <div className={`w-full ${h} bg-slate-50 animate-pulse rounded-sm`} />
 );
 
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
+  plugins: { 
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#0f172a',
+      padding: 12,
+      titleFont: { size: 12, weight: 'bold' },
+      bodyFont: { size: 12 },
+      borderRadius: 0,
+    }
+  },
   scales: { 
-    y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
-    x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10 } } }
+    y: { border: { display: false }, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' } },
+    x: { border: { display: false }, grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' } }
   }
 };
 

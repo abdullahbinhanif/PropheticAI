@@ -13,31 +13,30 @@ import PropertyDetail from '../pages/PropertyDetail';
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* 1. Main Dashboard */}
+      {/* 1. Main Dashboard - সিস্টেম ওভারভিউ */}
       <Route path="/" element={<Dashboard />} />
       
-      {/* 2. Property Listings */}
+      {/* 2. Property Listings - সকল ইনভেন্টরি তালিকা */}
       <Route path="/listings" element={<Listings />} />
       
-      {/* 3. Global Market Analysis (General View) */}
+      {/* 3. Global & Individual Market Analysis */}
+      {/* সাধারণ মার্কেট এনালাইসিস ভিউ */}
       <Route path="/analysis" element={<Analysis />} />
-      
-      {/* 4. Dynamic Property Routes 
-          FIXED: /analysis/:id now correctly points to the Analysis component
-      */}
-      {/* Basic details view */}
-      <Route path="/property/:id" element={<PropertyDetail />} />
-      
-      {/* Deep financial breakdown - এটা আগে PropertyDetail ছিল, এখন Analysis করা হয়েছে */}
+      {/* নির্দিষ্ট প্রপার্টি ভিত্তিক ফিন্যান্সিয়াল ব্রেকডাউন (Insights বাটন) */}
       <Route path="/analysis/:id" element={<Analysis />} /> 
       
-      {/* 5. Dynamic Risk Alerts */}
-      <Route path="/risks/:id" element={<RiskAlerts />} />
+      {/* 4. Dynamic Property Detail View */}
+      {/* বেসিক প্রপার্টি ডিটেইলস (কার্ডে ক্লিক করলে এখানে যাবে) */}
+      <Route path="/property/:id" element={<PropertyDetail />} />
       
-      {/* Static Risk Route (Optional) */}
+      {/* 5. Risk Alerts & Audit Nodes */}
+      {/* নির্দিষ্ট প্রপার্টির রিস্ক অডিট (Audit বাটন) */}
+      <Route path="/risks/:id" element={<RiskAlerts />} />
+      {/* জেনারেল রিস্ক ওভারভিউ */}
       <Route path="/risks" element={<RiskAlerts />} />
 
       {/* 6. Fallback/Safety Route */}
+      {/* ভুল পাথে গেলে সরাসরি ড্যাশবোর্ডে রিডাইরেক্ট করবে */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
