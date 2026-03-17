@@ -232,7 +232,7 @@ const RiskAlerts = () => {
                     onClick={() => setSelectedProperty(item)}
                     className="w-full bg-slate-50 text-slate-900 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest group-hover:bg-slate-900 group-hover:text-white transition-all cursor-pointer"
                   >
-                    View Risk Report
+                    Predict 
                   </button>
                 </div>
               ))
