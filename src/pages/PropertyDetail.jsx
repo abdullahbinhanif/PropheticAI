@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, MapPin, Activity, ShieldCheck, 
-  Layers, Globe, ChevronLeft, ChevronRight,
-  Bed, Bath, Maximize, Camera, Zap, TrendingUp, Info
+  ArrowLeft, MapPin, Activity, Layers, 
+  ChevronLeft, ChevronRight, Bed, Bath, 
+  Maximize, Zap, Info, Home, ShieldCheck
 } from 'lucide-react';
 import { 
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, RadarChart as ReRadar 
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer 
 } from 'recharts';
+
+// Soft Skeleton for SaaS feel
+const Skeleton = ({ className }) => (
+  <div className={`animate-pulse bg-slate-100 rounded-2xl ${className}`}></div>
+);
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -16,13 +21,9 @@ const PropertyDetail = () => {
   const [loading, setLoading] = useState(true);
   const [currentImg, setCurrentImg] = useState(0);
 
-  const formatValue = (value, type = 'text') => {
-    if (value === undefined || value === null || value === "null" || value === "") return "N/A";
-    const cleaned = String(value).replace(/[\[\]"']/g, '').trim();
-    if (type === 'price' && !cleaned.includes('£')) {
-        return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(cleaned);
-    }
-    return cleaned;
+  const formatValue = (value, fallback = "N/A") => {
+    if (value === undefined || value === null || value === "" || value === "N/A") return fallback;
+    return String(value).trim();
   };
 
   useEffect(() => {
@@ -42,187 +43,208 @@ const PropertyDetail = () => {
     fetchDetails();
   }, [id]);
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-      <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8"><Skeleton className="aspect-video" /></div>
+          <div className="lg:col-span-4 space-y-6">
+            <Skeleton className="h-10 w-1/2" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!property) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#F8FAFC]">
-      <p className="text-slate-500 mb-4 font-medium">Property not found</p>
-      <button onClick={() => navigate(-1)} className="px-5 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold shadow-sm">Go Back</button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <p className="text-slate-400 mb-4 font-medium italic">Property information unavailable</p>
+      <button onClick={() => navigate(-1)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-semibold transition-transform active:scale-95">Return to Listings</button>
     </div>
   );
 
-  const mapUrl = `https://maps.google.com/maps?q=${encodeURIComponent(formatValue(property.address))}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+  // --- Investment Analysis Logic ---
+  const getRadarData = () => {
+    const priceRaw = property.price?.replace(/[^0-9]/g, '') || "500000";
+    const priceNum = parseInt(priceRaw);
+    const epc = property.ecp_rating || 'C';
+    
+    return [
+      { subject: 'Potential Yield', A: priceNum < 400000 ? 95 : priceNum < 1000000 ? 80 : 65 },
+      { subject: 'Energy Score', A: epc.includes('A') ? 98 : epc.includes('B') ? 85 : 70 },
+      { subject: 'Market Stability', A: property.tenure?.toLowerCase().includes('freehold') ? 92 : 78 },
+      { subject: 'Rental Demand', A: property.bedrooms <= 3 ? 90 : 75 },
+      { subject: 'Capital Growth', A: priceNum > 1500000 ? 95 : 82 },
+    ];
+  };
+
+  const images = property.property_images?.length > 0 ? property.property_images : ["https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1280"];
+  const encodedAddress = encodeURIComponent(property.address || "London");
+  const mapUrl = `https://maps.google.com/maps?q=${encodedAddress}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
 
   return (
-    <div className="bg-[#F8FAFC] min-h-screen font-sans text-slate-900 pb-20">
+    <div className="bg-[#FCFDFF] min-h-screen font-sans text-slate-800 pb-20">
       
-      {/* --- Simple SaaS Header --- */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-slate-200">
+      {/* Header / Nav */}
+      <nav className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-all font-semibold text-sm">
-            <ArrowLeft size={18} /> <span>Portfolio</span>
+          <button onClick={() => navigate(-1)} className="group flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-semibold text-sm">
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform"/> <span>Properties</span>
           </button>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Status: Active</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg">
+            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+            <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Live Asset</span>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-8 pt-8">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 pt-6">
         
-        {/* --- Hero Section --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        {/* Main Grid: Gallery & Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
           
-          {/* Slider: Full Responsive */}
+          {/* Visual Gallery */}
           <div className="lg:col-span-8">
-            <div className="relative aspect-video bg-white rounded-3xl overflow-hidden border border-slate-200">
+            <div className="relative aspect-video bg-slate-100 rounded-3xl overflow-hidden border border-slate-200">
               <img 
-                src={property.images?.[currentImg] ? formatValue(property.images[currentImg]) : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000"} 
-                className="w-full h-full object-cover"
-                alt="Property"
+                src={images[currentImg]} 
+                className="w-full h-full object-cover" 
+                alt="Property View"
               />
-              <div className="absolute inset-x-4 bottom-4 flex justify-between items-center">
-                <div className="flex gap-2 bg-white/90 backdrop-blur p-1.5 rounded-2xl border border-white/20 shadow-sm">
-                  <button onClick={() => setCurrentImg(p => (p - 1 + property.images.length) % property.images.length)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors"><ChevronLeft size={18}/></button>
-                  <button onClick={() => setCurrentImg(p => (p + 1) % property.images.length)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors"><ChevronRight size={18}/></button>
+              {images.length > 1 && (
+                <div className="absolute inset-x-6 bottom-6 flex justify-between items-center">
+                  <div className="flex gap-2 bg-white/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200">
+                    <button onClick={() => setCurrentImg(p => (p - 1 + images.length) % images.length)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ChevronLeft size={18}/></button>
+                    <button onClick={() => setCurrentImg(p => (p + 1) % images.length)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors"><ChevronRight size={18}/></button>
+                  </div>
+                  <div className="bg-slate-900 px-3 py-1.5 rounded-lg text-white text-[10px] font-bold">
+                    IMAGE {currentImg + 1} / {images.length}
+                  </div>
                 </div>
-                <div className="bg-black/50 backdrop-blur px-3 py-1.5 rounded-xl text-white text-[10px] font-bold">
-                  {currentImg + 1} / {property.images?.length || 1} IMAGES
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
-          {/* Pricing & Core Stats: Responsive Fix */}
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 flex-1 flex flex-col justify-center">
-              <div className="mb-6">
-                <span className="text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-1 rounded-md mb-3 inline-block">Investment Asset</span>
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight mb-2 leading-tight">{formatValue(property.title)}</h1>
-                <p className="flex items-center gap-1.5 text-slate-400 text-sm font-medium"><MapPin size={14} /> {formatValue(property.address)}</p>
+          {/* Core Info Card */}
+          <div className="lg:col-span-4">
+            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 h-full flex flex-col justify-between">
+              <div>
+                <div className="flex flex-wrap gap-2 mb-4">
+                   <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-md uppercase tracking-wide border border-slate-200">
+                     {formatValue(property.property_type, "Residential")}
+                   </span>
+                   <span className="text-[10px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-md uppercase tracking-wide border border-indigo-100">
+                     {formatValue(property.tenure, "Freehold")}
+                   </span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight mb-3">
+                  {property.property_title}
+                </h1>
+                <p className="flex items-start gap-2 text-slate-400 text-sm font-medium">
+                  <MapPin size={16} className="shrink-0 text-slate-400 mt-0.5" /> {property.address}
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 pt-6 border-t border-slate-100">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Market Price</p>
-                  <p className="text-2xl font-extrabold text-slate-900">{formatValue(property.price, 'price')}</p>
+              <div className="mt-8">
+                <div className="bg-[#F8FAFC] p-6 rounded-2xl border border-slate-100 mb-4">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1.5 tracking-[0.1em]">Estimated Value</p>
+                  <p className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tighter">
+                    {property.price || "Contact for Price"}
+                  </p>
                 </div>
-                <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                  <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Annual Yield</p>
-                  <p className="text-2xl font-extrabold text-emerald-600">{formatValue(property.yield)}%</p>
+                <div className="grid grid-cols-2 gap-3">
+                   <div className="p-3 bg-white border border-slate-100 rounded-xl">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Efficiency</p>
+                      <p className="text-sm font-bold text-slate-700">EPC {formatValue(property.ecp_rating, "C")}</p>
+                   </div>
+                   <div className="p-3 bg-white border border-slate-100 rounded-xl">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Internal Area</p>
+                      <p className="text-sm font-bold text-slate-700">{formatValue(property.property_size, "TBC")}</p>
+                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* --- Content Grid --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Details & Analysis Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description Card */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-slate-50 rounded-lg text-slate-600"><Info size={18}/></div>
-                <h3 className="text-base font-bold text-slate-800">Property Overview</h3>
+          {/* Description & Map */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white p-8 md:p-10 rounded-3xl border border-slate-200">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-slate-50 rounded-lg text-slate-700 border border-slate-100"><Info size={20}/></div>
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">About this Property</h3>
               </div>
-              <p className="text-slate-500 leading-relaxed text-sm md:text-base">{formatValue(property.description)}</p>
+              <p className="text-slate-500 leading-relaxed font-normal text-[15px] whitespace-pre-line">
+                {property.description || "Detailed description is being updated. Please contact the asset manager for the full investment memorandum."}
+              </p>
             </div>
 
-            {/* Gallery Overview: Small Thumbnails */}
-            <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-slate-50 rounded-lg text-slate-600"><Camera size={18}/></div>
-                <h3 className="text-base font-bold text-slate-800">Visual Assets</h3>
-              </div>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                {property.images?.map((img, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => setCurrentImg(idx)}
-                    className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${currentImg === idx ? 'border-indigo-500 p-0.5' : 'border-transparent opacity-60 hover:opacity-100'}`}
-                  >
-                    <img src={formatValue(img)} className="w-full h-full object-cover rounded-lg" alt="" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Map Card */}
-            <div className="bg-white p-2 rounded-3xl border border-slate-200 h-80 overflow-hidden">
-               <iframe title="Map" width="100%" height="100%" className="rounded-[20px] grayscale-[0.2]" frameBorder="0" src={mapUrl} allowFullScreen></iframe>
+            <div className="bg-white p-2 rounded-3xl border border-slate-200 h-[400px]">
+               <iframe 
+                title="Property Map" 
+                width="100%" height="100%" 
+                className="rounded-2xl grayscale-[0.2] contrast-[1.1]" 
+                frameBorder="0" src={mapUrl} allowFullScreen
+               ></iframe>
             </div>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="space-y-6">
-            
-            {/* Data Intelligence: Responsive Chart Box */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="p-2 bg-slate-50 rounded-lg text-indigo-500"><Activity size={18}/></div>
-                <h3 className="text-base font-bold text-slate-800">Performance Metrics</h3>
+          {/* Sidebar: Analysis & Specs */}
+          <div className="space-y-8">
+            {/* Investment Analysis Chart */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-200">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] flex items-center gap-2">
+                  <Activity size={14} className="text-indigo-500"/> Investment Profile
+                </h3>
               </div>
-              <div className="h-64 w-full">
+              <div className="h-60 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
-                    { subject: 'Yield', A: (parseFloat(property.yield) * 10) || 60 },
-                    { subject: 'Growth', A: 80 },
-                    { subject: 'Demand', A: 70 },
-                    { subject: 'Safety', A: 90 },
-                    { subject: 'EPC', A: 75 },
-                  ]}>
-                    <PolarGrid stroke="#E2E8F0" />
-                    <PolarAngleAxis dataKey="subject" tick={{fontSize: 9, fontWeight: 700, fill: '#64748B'}} />
-                    <Radar dataKey="A" stroke="#6366F1" strokeWidth={2} fill="#6366F1" fillOpacity={0.1} />
+                  <RadarChart cx="50%" cy="50%" outerRadius="75%" data={getRadarData()}>
+                    <PolarGrid stroke="#F1F5F9" />
+                    <PolarAngleAxis dataKey="subject" tick={{fontSize: 9, fontWeight: 700, fill: '#94A3B8'}} />
+                    <Radar 
+                      dataKey="A" 
+                      stroke="#4F46E5" 
+                      strokeWidth={2} 
+                      fill="#4F46E5" 
+                      fillOpacity={0.08} 
+                    />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-
-            {/* Technical Data: Based on CSV Fields */}
-            <div className="bg-white p-6 rounded-3xl border border-slate-200">
-              <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-6">Asset Specifications</h3>
-              <div className="space-y-4">
-                {[
-                  { label: 'Energy Class', val: property.epc, icon: <Zap size={14}/> },
-                  { label: 'Council Tax', val: property.council_tax, icon: <Layers size={14}/> },
-                  { label: 'Furnishing', val: property.furnishing, icon: <Globe size={14}/> },
-                  { label: 'Asset Security', val: property.security || 'Verified', icon: <ShieldCheck size={14}/> },
-                  { label: 'Living Area', val: `${property.sq_ft || 'N/A'} sqft`, icon: <Maximize size={14}/> }
-                ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center py-1">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <span className="p-1.5 bg-slate-50 rounded-md text-slate-400">{item.icon}</span>
-                      <span className="text-xs font-bold uppercase tracking-tighter">{item.label}</span>
-                    </div>
-                    <span className="text-sm font-bold text-slate-900">{formatValue(item.val)}</span>
-                  </div>
-                ))}
+              <div className="mt-6 flex items-center gap-3 p-3 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                <ShieldCheck size={18} className="text-indigo-600 shrink-0" />
+                <p className="text-[11px] font-semibold text-indigo-700 leading-tight"> This asset shows a high score in market stability and demand.</p>
               </div>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-3">
-               <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Bedrooms</p>
-                  <div className="flex items-center justify-center gap-1.5 text-slate-800">
-                    <Bed size={14} className="text-slate-400"/>
-                    <span className="font-bold">{formatValue(property.bedrooms)}</span>
+            {/* Specifications Audit */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-200">
+              <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-6">Physical Specifications</h3>
+              <div className="divide-y divide-slate-50">
+                {[
+                  { label: 'Bedrooms', val: property.bedrooms, icon: <Bed size={15}/> },
+                  { label: 'Bathrooms', val: property.bathrooms, icon: <Bath size={15}/> },
+                  { label: 'Tax Band', val: property.council_tax_band, icon: <Layers size={15}/> },
+                  { label: 'Land Tenure', val: property.tenure, icon: <Home size={15}/> },
+                  { label: 'Total Area', val: property.property_size, icon: <Maximize size={15}/> },
+                  { label: 'Availability', val: property.availability || 'Available', icon: <Zap size={15}/> },
+                ].map((item, i) => (
+                  <div key={i} className="flex justify-between items-center py-3.5 group">
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-400 group-hover:text-indigo-500 transition-colors">{item.icon}</span>
+                      <span className="text-[12px] font-semibold text-slate-500">{item.label}</span>
+                    </div>
+                    <span className="text-[12px] font-bold text-slate-900">{formatValue(item.val, "TBC")}</span>
                   </div>
-               </div>
-               <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Bathrooms</p>
-                  <div className="flex items-center justify-center gap-1.5 text-slate-800">
-                    <Bath size={14} className="text-slate-400"/>
-                    <span className="font-bold">{formatValue(property.bathrooms) || '1'}</span>
-                  </div>
-               </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

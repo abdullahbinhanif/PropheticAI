@@ -19,25 +19,22 @@ const AppRoutes = () => {
       {/* 2. Property Listings */}
       <Route path="/listings" element={<Listings />} />
       
-      {/* 3. Global Market Analysis */}
+      {/* 3. Global Market Analysis (General View) */}
       <Route path="/analysis" element={<Analysis />} />
       
       {/* 4. Dynamic Property Routes 
-         - /property/:id: Basic details view
-         - /analysis/:id: Deep financial breakdown
+          FIXED: /analysis/:id now correctly points to the Analysis component
       */}
+      {/* Basic details view */}
       <Route path="/property/:id" element={<PropertyDetail />} />
-      <Route path="/analysis/:id" element={<PropertyDetail />} />
       
-      {/* 5. Dynamic Risk Alerts
-         নিচে :id যোগ করা হয়েছে যাতে নির্দিষ্ট প্রোপার্টির 
-         Fragility Index এবং CSV ডাটা লোড হতে পারে।
-      */}
+      {/* Deep financial breakdown - এটা আগে PropertyDetail ছিল, এখন Analysis করা হয়েছে */}
+      <Route path="/analysis/:id" element={<Analysis />} /> 
+      
+      {/* 5. Dynamic Risk Alerts */}
       <Route path="/risks/:id" element={<RiskAlerts />} />
       
-      {/* Static Risk Route (Optional)
-         যদি আইডি ছাড়া জেনারেল কোনো রিস্ক পেজ থাকে তবে এটি কাজে লাগবে 
-      */}
+      {/* Static Risk Route (Optional) */}
       <Route path="/risks" element={<RiskAlerts />} />
 
       {/* 6. Fallback/Safety Route */}

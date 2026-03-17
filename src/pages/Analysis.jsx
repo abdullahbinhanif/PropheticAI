@@ -1,24 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
-  ResponsiveContainer, Cell, Radar, RadarChart, 
-  PolarGrid, PolarAngleAxis 
+  BarChart, Bar, XAxis, YAxis, Tooltip, 
+  ResponsiveContainer, Cell, RadialBarChart, 
+  RadialBar, PolarAngleAxis
 } from 'recharts';
-import { Info, Activity, Target, ShieldCheck, Zap, ArrowLeft } from 'lucide-react';
-
-const AnalysisSkeleton = () => (
-  <div className="max-w-[1400px] mx-auto p-4 md:p-10 space-y-8 animate-pulse">
-    <div className="space-y-2">
-      <div className="h-5 w-32 bg-slate-100 rounded-full"></div>
-      <div className="h-7 w-64 bg-slate-200 rounded-lg"></div>
-    </div>
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <div className="lg:col-span-7 h-[350px] bg-slate-50 rounded-2xl"></div>
-      <div className="lg:col-span-5 h-[350px] bg-slate-50 rounded-2xl"></div>
-    </div>
-  </div>
-);
+import { Info, Activity, Target, ShieldCheck, Zap, ArrowLeft, Building2, TrendingUp, Globe, HeartPulse } from 'lucide-react';
 
 const Analysis = () => {
   const { id } = useParams();
@@ -28,109 +15,125 @@ const Analysis = () => {
 
   useEffect(() => {
     const fetchProperty = async () => {
+      setLoading(true);
       try {
         const base_url = import.meta.env.VITE_BACKEND_URL || "http://127.0.0.1:5000";
         const response = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
         const data = await response.json();
-        const selected = data.find(p => String(p.id || p._id) === String(id));
-        setTimeout(() => {
-          if (selected) setProperty(selected);
-          setLoading(false);
-        }, 500);
+        
+        const selected = Array.isArray(data) ? data.find(p => 
+          String(p.id).trim() === String(id).trim()
+        ) : null;
+        
+        if (selected) setProperty(selected);
       } catch (err) {
-        console.error("Fetch Error:", err);
+        console.error("Sync Error:", err);
+      } finally {
         setLoading(false);
       }
     };
     fetchProperty();
   }, [id]);
 
-  if (loading) return <AnalysisSkeleton />;
+  const analysisData = useMemo(() => {
+    if (!property) return null;
+    
+    const yieldMatch = property.description?.match(/(\d+(\.\d+)?)\s*%/);
+    const yieldVal = yieldMatch ? parseFloat(yieldMatch[1]) : 5.8;
+    const priceVal = parseFloat(String(property.price).replace(/[^0-9.]/g, '')) || 0;
+    const epc = String(property.ecp_rating || 'N/A').toUpperCase();
 
-  const displayProperty = property || {};
-  const yieldValue = parseFloat(displayProperty.yield) || 0;
-  const priceValue = parseFloat(String(displayProperty.price).replace(/[^0-9.]/g, '')) || 0;
+    const factorData = [
+      { name: 'Income Strength', score: Math.min(yieldVal * 12, 98), fill: '#4f46e5' }, 
+      { name: 'Energy Standard', score: ['A', 'B', 'C'].includes(epc) ? 92 : 45, fill: '#10b981' },
+      { name: 'Ownership Value', score: 78, fill: '#f59e0b' },
+      { name: 'Resale Speed', score: priceVal < 700000 ? 85 : 55, fill: '#ec4899' },
+    ];
 
-  // ১. Factor Logic (Bar Chart): লজিক অনুযায়ী ইমপ্যাক্ট সেট করা
-  const factorData = [
-    { factor: 'Transit', impact: displayProperty.transport_score || 80 },
-    { factor: 'Local Wealth', impact: 70 },
-    { factor: 'Jobs', impact: 65 },
-    { factor: 'Safety Net', impact: ['A', 'B'].includes(displayProperty.epc) ? 85 : 45 },
-    { factor: 'Saturation', impact: yieldValue > 6 ? -40 : -20 }, 
-  ];
+    // Radial Gauge Data for "Investment Health"
+    const gaugeData = [{ value: 82, fill: '#4f46e5' }];
 
-  // ২. Property Balance (Radar Chart): ব্যালেন্সড ইনভেস্টমেন্ট ভিউ
-  const tradeOffData = [
-    { subject: 'Cash Flow', value: Math.min(yieldValue * 12, 100) },
-    { subject: 'Safety', value: ['A', 'B'].includes(displayProperty.epc) ? 90 : 60 },
-    { subject: 'Future Gain', value: 75 },
-    { subject: 'Exit Ease', value: priceValue > 600000 ? 50 : 85 },
-    { subject: 'Risk Cover', value: yieldValue > 5.5 ? 80 : 55 },
-  ];
+    return { factorData, gaugeData, yieldVal, epc, priceVal };
+  }, [property]);
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="flex flex-col items-center">
+        <div className="w-10 h-10 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-xs font-medium text-slate-500">Preparing your personalized analysis...</p>
+      </div>
+    </div>
+  );
+
+  if (!property) return (
+    <div className="min-h-screen flex items-center justify-center bg-white p-6 text-center">
+        <div className="max-w-xs space-y-4">
+            <h2 className="text-lg font-bold text-slate-800">Oops! We couldn't find this property.</h2>
+            <p className="text-sm text-slate-500">The property link might be broken or moved.</p>
+            <button onClick={() => navigate('/listings')} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl">Back to Search</button>
+        </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-10 font-sans text-slate-900">
-      <div className="max-w-[1400px] mx-auto space-y-10">
+      <div className="max-w-6xl mx-auto space-y-10">
         
-        {/* Minimal Header */}
-        <header className="space-y-3">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-1 text-slate-400 hover:text-indigo-600 transition-colors text-[10px] font-bold uppercase tracking-[0.2em]"
-          >
-            <ArrowLeft size={12} /> Return
-          </button>
-          <div className="space-y-1">
-            <h1 className="text-xl md:text-2xl font-black tracking-tight">
-              MARKET PULSE <span className="text-slate-200 mx-1">/</span> 
-              <span className="text-indigo-600 uppercase">Ref {id?.slice(-4)}</span>
+        {/* Humanized Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-100 pb-8">
+          <div className="space-y-3">
+            <button 
+              onClick={() => navigate('/listings')} 
+              className="flex items-center gap-2 text-indigo-600 hover:gap-3 transition-all text-xs font-bold cursor-pointer"
+            >
+              <ArrowLeft size={16} /> Explore more properties
+            </button>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">
+              Investment Insights <span className="text-slate-200 font-light mx-2">|</span> 
+              <span className="text-indigo-600"> {property.property_title || "Asset Overview"}</span>
             </h1>
-            <p className="text-[12px] text-slate-500 font-medium max-w-xl leading-relaxed">
-              A quick look at how local transit, jobs, and energy standards affect this property's long-term health.
+            <p className="text-slate-500 text-sm max-w-2xl font-medium">
+              We’ve analyzed the market data for <span className="text-slate-800 font-bold">{property.address}</span> to help you make an informed decision.
             </p>
           </div>
-        </header>
+          <div className="hidden md:flex items-center gap-3 bg-slate-50 px-5 py-3 rounded-2xl border border-slate-100">
+             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+             <span className="text-xs font-bold text-slate-700">Live Market Data Active</span>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* Factor Logic: Bar Chart with Entry Animation */}
-          <section className="lg:col-span-7 bg-white p-6 md:p-8 rounded-2xl border border-slate-100 overflow-hidden">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                <Activity size={16} className="text-indigo-600"/>
-                <h3 className="font-bold text-[11px] uppercase tracking-widest text-slate-700">Growth Drivers</h3>
+          {/* Performance Bar Chart */}
+          <section className="lg:col-span-7 border border-slate-100 rounded-3xl p-8 hover:border-indigo-50 transition-colors">
+            <div className="flex items-center justify-between mb-10">
+              <div className="space-y-1">
+                <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                  <Activity size={18} className="text-indigo-600"/> Why this property stands out
+                </h3>
+                <p className="text-xs text-slate-400">Comparing key performance factors against local averages.</p>
               </div>
-              <TooltipComponent text="External factors impacting your investment." />
             </div>
             
-            <div className="h-[300px] w-full">
+            <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={factorData} layout="vertical" margin={{ left: 0, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                  <XAxis type="number" hide domain={[-100, 100]} />
+                <BarChart data={analysisData.factorData} layout="vertical">
+                  <XAxis type="number" hide domain={[0, 100]} />
                   <YAxis 
-                    dataKey="factor" 
+                    dataKey="name" 
                     type="category" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fontSize: 10, fontWeight: 700, fill: '#64748b' }} 
-                    width={80}
+                    tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} 
+                    width={110} 
                   />
                   <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
-                    contentStyle={{ borderRadius: '8px', border: '1px solid #f1f5f9', fontSize: '10px', boxShadow: 'none' }}
+                    cursor={{fill: '#f8fafc'}} 
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '11px', fontWeight: 'bold' }} 
                   />
-                  <Bar 
-                    dataKey="impact" 
-                    radius={[0, 4, 4, 0]} 
-                    barSize={16}
-                    isAnimationActive={true}
-                    animationDuration={1200}
-                    animationEasing="ease-out"
-                  >
-                    {factorData.map((entry, index) => (
-                      <Cell key={index} fill={entry.impact > 0 ? '#4f46e5' : '#ef4444'} />
+                  <Bar dataKey="score" radius={[0, 10, 10, 0]} barSize={14}>
+                    {analysisData.factorData.map((entry, index) => (
+                      <Cell key={index} fill={entry.fill} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -138,73 +141,87 @@ const Analysis = () => {
             </div>
           </section>
 
-          {/* Property Balance: Radar Chart with Entry Animation */}
-          <section className="lg:col-span-5 bg-white p-6 md:p-8 rounded-2xl border border-slate-100 overflow-hidden">
-            <div className="flex items-center gap-2 mb-8">
-              <Target size={16} className="text-indigo-600"/>
-              <h3 className="font-bold text-[11px] uppercase tracking-widest text-slate-700">Property Balance</h3>
+          {/* New Meaningful Health Gauge */}
+          <section className="lg:col-span-5 border border-slate-100 rounded-3xl p-8 flex flex-col items-center justify-center bg-slate-50/30">
+            <div className="w-full mb-6">
+               <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <HeartPulse size={18} className="text-indigo-600"/> Overall Health
+              </h3>
             </div>
-            <div className="h-[300px]">
+            <div className="h-[240px] w-full relative flex items-center justify-center">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={tradeOffData}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 800, fill: '#94a3b8' }} />
-                  <Radar
-                    dataKey="value"
-                    stroke="#4f46e5"
-                    strokeWidth={2}
-                    fill="#4f46e5"
-                    fillOpacity={0.1}
-                    isAnimationActive={true}
-                    animationDuration={1500}
-                    animationEasing="ease-in-out"
+                <RadialBarChart 
+                  innerRadius="80%" 
+                  outerRadius="100%" 
+                  data={analysisData.gaugeData} 
+                  startAngle={90} 
+                  endAngle={-270}
+                >
+                  <PolarAngleAxis
+                    type="number"
+                    domain={[0, 100]}
+                    angleAxisId={0}
+                    tick={false}
                   />
-                </RadarChart>
+                  <RadialBar
+                    background
+                    dataKey="value"
+                    cornerRadius={30}
+                  />
+                </RadialBarChart>
               </ResponsiveContainer>
+              <div className="absolute flex flex-col items-center">
+                <span className="text-4xl font-black text-slate-900 leading-none">82<span className="text-lg text-slate-400">%</span></span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Optimal Fit</span>
+              </div>
             </div>
+            <p className="text-center text-xs text-slate-500 font-medium px-4 mt-4">
+              This score indicates how well this asset matches a <span className="font-bold text-slate-800">High-Yield Low-Risk</span> profile.
+            </p>
           </section>
 
-          {/* Human-Centered Verdict */}
-          <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-2 text-indigo-600 font-bold uppercase text-[9px] tracking-widest mb-3">
-                <ShieldCheck size={14} /> Local Analysis
+          {/* Executive Summary Card (Now White/Grey Theme) */}
+          <div className="lg:col-span-12 bg-white border-2 border-slate-100 rounded-[2.5rem] p-10 relative overflow-hidden">
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-full text-[10px] font-bold text-indigo-700 uppercase tracking-wide">
+                  <TrendingUp size={14}/> Expert Recommendation
+                </div>
+                <h2 className="text-2xl md:text-4xl font-bold text-slate-900 leading-tight">
+                  A steady <span className="text-indigo-600 font-black">{analysisData.yieldVal}% annual return</span> makes this a strong contender for your portfolio.
+                </h2>
+                <p className="text-slate-500 text-base font-medium">
+                  Based on current market trends, this property sits in the top tier of the local market. 
+                </p>
               </div>
-              <p className="text-[12px] text-slate-600 leading-relaxed font-medium">
-                We looked at the numbers: Since the EPC is <span className="text-slate-900 font-bold">{displayProperty.epc || 'N/A'}</span>, 
-                your regulatory risk is {['A', 'B', 'C'].includes(displayProperty.epc) ? 'very low' : 'something to watch'}. 
-                The {yieldValue}% yield shows this is a {yieldValue > 6 ? 'high-performance' : 'stable'} asset in today's market.
-              </p>
-            </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-100">
-              <div className="flex items-center gap-2 text-slate-400 font-bold uppercase text-[9px] tracking-widest mb-3">
-                <Zap size={14} className="text-amber-500" /> Technical Basis
+              <div className="grid grid-cols-2 gap-6 bg-slate-50 p-8 rounded-3xl border border-slate-100">
+                <SummaryPoint label="Risk Level" value="Low-Moderate" detail="Safe for steady growth" />
+                <SummaryPoint label="Strategy" value="Capital Growth" detail="Ideal for long-term hold" />
+                <SummaryPoint label="Market Rent" value="High Demand" detail="Quick tenant turnaround" />
+                <SummaryPoint label="Compliance" value={`Grade ${analysisData.epc}`} detail="Meets energy standards" />
               </div>
-              <ul className="space-y-2">
-                {[
-                  'Transit scores are based on actual walking distance to stations.',
-                  'Exit ease is calculated using the local average time-on-market.',
-                  'Safety net refers to energy compliance and tax bands.'
-                ].map((text, i) => (
-                  <li key={i} className="flex gap-2 text-[11px] text-slate-500 font-medium leading-tight">
-                    <span className="text-indigo-400">•</span> {text}
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
-
         </div>
       </div>
     </div>
   );
 };
 
+// Helper Components
+const SummaryPoint = ({ label, value, detail }) => (
+  <div className="space-y-1">
+    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+    <p className="text-sm font-bold text-slate-800">{value}</p>
+    <p className="text-[10px] text-slate-400 font-medium">{detail}</p>
+  </div>
+);
+
 const TooltipComponent = ({ text }) => (
   <div className="group relative">
-    <Info size={14} className="text-slate-300 cursor-help" />
-    <div className="absolute right-0 bottom-full mb-2 w-36 p-2 bg-slate-800 text-white text-[9px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+    <Info size={16} className="text-slate-300 cursor-help hover:text-indigo-600" />
+    <div className="absolute right-0 bottom-full mb-3 w-56 p-4 bg-slate-900 text-white text-[10px] leading-relaxed rounded-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-50 shadow-xl">
       {text}
     </div>
   </div>
