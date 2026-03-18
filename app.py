@@ -6,28 +6,38 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# CORS সেটিংস: সব অরিজিন এলাউ করা হয়েছে যাতে রিঅ্যাক্ট থেকে কানেক্ট করতে সমস্যা না হয়
+# Enable CORS for all routes to allow seamless communication with the React frontend
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# ফাইল পাথ সেটিংস
+# Configuration for file paths and environment variables
 base_path = os.path.dirname(os.path.abspath(__file__))
 csv_path = os.path.join(base_path, 'table.csv')
 
-# --- Helper Functions ---
+# --- Data Transformation & Cleaning Helpers ---
 
 def clean_value(val):
-    """NaN বা খালি ঘর থাকলে N/A রিটার্ন করবে এবং এনকোডিং ঠিক করবে"""
+    """
+    Cleans raw data from CSV:
+    - Returns 'N/A' for missing/empty values.
+    - Fixes common UTF-8 encoding issues (e.g., currency symbols).
+    - Removes surrounding quotes or brackets.
+    """
     if pd.isna(val) or str(val).lower() == "nan" or str(val).strip() == "":
         return "N/A"
+    
     s = str(val).strip()
-    # কারেন্সি এবং এনকোডিং ফিক্স (UTF-8)
+    # Correcting UTF-8 encoding artifacts for symbols like £
     s = s.replace('Â£', '£').replace('Â', '')
-    # এক্সট্রা কোট বা ব্র্যাকেট রিমুভ
+    # Removing extra formatting characters like quotes or brackets
     s = re.sub(r'^["\'\[]+|["\'\]]+$', '', s)
     return s
 
 def extract_number(val):
-    """প্রাইস বা ইল্ড কলাম থেকে শুধুমাত্র নাম্বার বের করবে"""
+    """
+    Extracts numeric values from string data (Price or Yield):
+    - Removes currency symbols, commas, and non-numeric characters.
+    - Returns 0 if no numeric data is found or if value is N/A.
+    """
     if pd.isna(val) or str(val).strip() == "" or str(val).lower() == "n/a":
         return 0
     clean_str = re.sub(r'[^\d.]', '', str(val).replace(',', ''))
@@ -37,17 +47,23 @@ def extract_number(val):
         return 0
 
 def extract_images(raw_data):
-    """ইমেজ ইউআরএল এক্সট্র্যাক্টর"""
+    """
+    Extracts all valid HTTP/HTTPS URLs from a string containing image links.
+    Returns an array of URL strings.
+    """
     if pd.isna(raw_data) or str(raw_data).strip() == "":
         return []
     links = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-f_A-F][0-9a-f_A-F]))+', str(raw_data))
     return links
 
-# --- Endpoints ---
+# --- API Endpoints ---
 
 @app.route('/')
 def home():
-    """এপিআই স্ট্যাটাস চেক"""
+    """
+    System Health Check:
+    Verifies database connectivity and checks environment variables like Backend_URL and Google Client ID.
+    """
     return jsonify({
         "status": "Audit Intelligence Active",
         "database_connected": os.path.exists(csv_path),
@@ -57,17 +73,20 @@ def home():
 
 @app.route('/api/properties', methods=['GET'])
 def get_properties():
-    """সব প্রপার্টির ডিটেইলস ডাটা"""
+    """
+    Retrieves the full list of properties:
+    Parses the CSV and maps raw columns to structured JSON objects for the frontend Explorer.
+    """
     try:
         if not os.path.exists(csv_path):
-            return jsonify({"error": "table.csv not found"}), 404
+            return jsonify({"error": "table.csv database file not found"}), 404
 
         df = pd.read_csv(csv_path)
         properties = []
         
         for index, row in df.iterrows():
             uprn_val = clean_value(row.get('uprn'))
-            # ফ্রন্টএন্ডে নেভিগেশনের জন্য 'id' ফিল্ড মাস্ট লাগবে
+            # Fallback ID generation to ensure unique identification for frontend routing
             p_id = uprn_val if uprn_val != "N/A" else f"prop-{index}"
             
             properties.append({
@@ -103,13 +122,16 @@ def get_properties():
 
 @app.route('/api/properties/<prop_id>', methods=['GET'])
 def get_single_property(prop_id):
-    """নির্দিষ্ট একটি প্রপার্টির ডাটা (PropertyDetail পেজের জন্য)"""
+    """
+    Retrieves detailed data for a specific asset:
+    Filters the dataset based on the unique UPRN provided via the URL parameter.
+    """
     try:
         if not os.path.exists(csv_path):
             return jsonify({"error": "CSV database missing"}), 404
             
         df = pd.read_csv(csv_path)
-        # uprn কলামে আইডিটি খোঁজা হচ্ছে
+        # Filtering dataframe based on UPRN match
         match = df[df['uprn'].astype(str) == str(prop_id)]
         
         if match.empty:
@@ -137,7 +159,10 @@ def get_single_property(prop_id):
 
 @app.route('/api/risk-data-csv')
 def get_risk_data():
-    """রিস্ক পেজের জন্য CSV ডাটা স্ট্রিম"""
+    """
+    Dynamic CSV Stream for Risk Analysis:
+    Filters relevant columns and converts them into a flat CSV format for analytics tools.
+    """
     try:
         if not os.path.exists(csv_path):
             return Response("uprn,title,price,ecp_rating,tenure\n", mimetype='text/csv')
@@ -158,7 +183,9 @@ def get_risk_data():
     except Exception as e:
         return Response(f"error\n{str(e)}", mimetype='text/csv')
 
+# --- Main Entry Point ---
+
 if __name__ == '__main__':
-    # এনভায়রনমেন্ট ভেরিয়েবল সাপোর্ট
+    # Supports both local development and containerized deployment via environment ports
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)

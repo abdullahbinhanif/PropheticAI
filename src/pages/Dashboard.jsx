@@ -18,11 +18,15 @@ const Dashboard = () => {
   const [properties, setProperties] = useState([]);
   const [connStatus, setConnStatus] = useState('Checking');
 
+  /**
+   * Effect: Data Synchronization
+   * Fetches property records from the Python/Flask backend using environment-aware URLs.
+   */
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        // লজিক ফিক্স: এনভায়রনমেন্ট ভেরিয়েবল হ্যান্ডলিং
+        // Dynamic environment variable resolution for API connectivity
         const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
         const response = await fetch(`${base_url.replace(/\/$/, '')}/api/properties`);
         
@@ -32,13 +36,13 @@ const Dashboard = () => {
         
         if (Array.isArray(data)) {
           setProperties(data);
-          setConnStatus('Nominal');
+          setConnStatus('Nominal'); // System operational
         } else {
-          setConnStatus('Degraded');
+          setConnStatus('Degraded'); // Partial data mismatch
         }
       } catch (err) {
         console.error("Dashboard Sync Error:", err);
-        setConnStatus('Offline');
+        setConnStatus('Offline'); // Connection failed
       } finally {
         setTimeout(() => setLoading(false), 800);
       }
@@ -56,20 +60,20 @@ const Dashboard = () => {
     const yields = properties.map(p => p.yield_num || 0).filter(y => y > 0);
     const avgYield = yields.length ? yields.reduce((a, b) => a + b, 0) / yields.length : 0;
     
-    // ডাইনামিক রিস্ক প্রোফাইল লজিক
+    // Risk Classification based on Yield thresholds
     const riskLevel = avgYield > 12 ? "High Return" : avgYield > 6 ? "Balanced" : "Conservative";
     const riskColor = riskLevel === "High Return" ? "text-rose-600" : riskLevel === "Balanced" ? "text-amber-600" : "text-emerald-600";
 
+    // Geospatial Modal Analysis (Identifies the primary region in the dataset)
     const regions = properties.map(p => {
         const parts = p.address?.split(',');
         return parts ? parts[parts.length - 1].trim() : "Unknown";
     });
     
-    // মোড ক্যালকুলেশন (সবচেয়ে বেশি কোন এলাকা আছে)
     const regionCounts = regions.reduce((acc, r) => ({ ...acc, [r]: (acc[r] || 0) + 1 }), {});
     const modeRegion = Object.keys(regionCounts).reduce((a, b) => regionCounts[a] > regionCounts[b] ? a : b, "N/A");
 
-    // মার্কেট বায়াস (Growth analysis)
+    // Market Momentum Analysis (Growth/Decline Logic)
     const validPrices = prices.filter(p => p > 0);
     const growth = validPrices.length > 1 ? validPrices[validPrices.length - 1] - validPrices[0] : 0;
     const biasText = growth > 0 ? "Upward Trend" : growth < 0 ? "Price Correction" : "Stable Market";
@@ -83,8 +87,8 @@ const Dashboard = () => {
       riskColor,
       biasText,
       biasColor,
-      prices: validPrices.slice(-15),
-      dataPoints: properties.length * 8
+      prices: validPrices.slice(-15), // Sparkline data points
+      dataPoints: properties.length * 8 // Estimated total data signals processed
     };
   }, [properties]);
 
@@ -122,7 +126,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-white p-4 md:p-10 font-sans text-slate-900">
       <div className="max-w-[1400px] mx-auto space-y-8">
         
-        {/* Header */}
+        {/* Navigation & Global Search */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-10 gap-6">
           <div className="flex items-center gap-5">
             <div className="p-4 bg-slate-900 rounded-none">
@@ -150,7 +154,7 @@ const Dashboard = () => {
           </div>
         </header>
 
-        {/* 4-Column KPI Grid */}
+        {/* Executive KPI Grid: Real-time Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border border-slate-200 rounded-none overflow-hidden">
           <KPICard loading={loading} label="Active Inventory" value={stats?.total} subText="Total properties tracked" sparkline={stats?.prices} trend="up" border />
           <KPICard loading={loading} label="Average Yield" value={`${stats?.avgYield}%`} subText="Annual return rate" sparkline={[5, 8, 7, 12, 10, 15]} trend="up" border />
@@ -171,7 +175,7 @@ const Dashboard = () => {
           <KPICard loading={loading} label="Core Region" value={stats?.region} subText="Highest density area" trend="up" />
         </div>
 
-        {/* Main Section */}
+        {/* Analytics Hub: Time-series Visualization */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-6">
             <div className="flex items-center justify-between">
@@ -197,7 +201,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Regional Sidebar */}
+          {/* Contextual Market Insights Sidebar */}
           <div className="lg:col-span-4 space-y-6">
             <div className="p-8 border border-slate-200 space-y-6 bg-white">
               <div className="flex items-center gap-2 text-indigo-600 font-bold uppercase text-[10px] tracking-widest">
@@ -209,9 +213,9 @@ const Dashboard = () => {
                     {stats?.region}
                   </h3>
                   <p className="text-sm text-slate-500 leading-relaxed">
-                    We've analyzed <span className="text-slate-900 font-bold">{stats?.total} assets</span> in this area. 
-                    The local market shows a <span className="text-indigo-600 font-bold underline underline-offset-4">{stats?.biasText.toLowerCase()}</span>, 
-                    suggesting a {parseFloat(stats?.avgYield) > 5 ? 'strong' : 'steady'} period for investors.
+                    System analysis of <span className="text-slate-900 font-bold">{stats?.total} assets</span>. 
+                    Regional bias indicates an <span className="text-indigo-600 font-bold underline underline-offset-4">{stats?.biasText.toLowerCase()}</span>, 
+                    validating a {parseFloat(stats?.avgYield) > 5 ? 'strong' : 'steady'} period for asset acquisition.
                   </p>
                 </div>
               )}
@@ -229,8 +233,14 @@ const Dashboard = () => {
   );
 };
 
-// --- Atomic Components ---
+// --- Atomic UI Components ---
 
+/**
+ * @component KPICard
+ * @param {string} label - Metric Title
+ * @param {string} value - Computed Value
+ * @param {Array} sparkline - Array of price points for visual mini-chart
+ */
 const KPICard = ({ label, value, subText, border, loading, trend, sparkline }) => (
   <div className={`p-8 bg-white flex flex-col justify-between min-h-[180px] ${border ? 'lg:border-r border-b lg:border-b-0 border-slate-200' : ''}`}>
     {loading ? <Skeleton h="h-full" /> : (
@@ -263,6 +273,10 @@ const KPICard = ({ label, value, subText, border, loading, trend, sparkline }) =
   </div>
 );
 
+/**
+ * @component DriverItem
+ * List item for displaying market signals/attributes.
+ */
 const DriverItem = ({ icon, label, score, color }) => (
   <div className="flex items-center justify-between p-5 bg-white transition-colors hover:bg-slate-50 cursor-default">
     <div className="flex items-center gap-4">
@@ -277,6 +291,7 @@ const Skeleton = ({ h }) => (
   <div className={`w-full ${h} bg-slate-50 animate-pulse rounded-sm`} />
 );
 
+// Chart Configuration
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,

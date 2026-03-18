@@ -7,6 +7,9 @@ import {
 import { CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, XAxis, YAxis } from 'recharts';
 import Papa from 'papaparse';
 
+/**
+ * @component Skeleton
+ */
 const Skeleton = ({ className }) => (
   <div className={`animate-pulse bg-slate-100/80 rounded-2xl ${className}`} />
 );
@@ -34,7 +37,6 @@ const RiskAlerts = () => {
           complete: (results) => {
             if (results.data) {
               setTotalParsed(results.data.length); 
-              
               const validPrices = results.data
                 .map(r => parseFloat(r.price) || 0)
                 .filter(p => p > 0);
@@ -52,7 +54,6 @@ const RiskAlerts = () => {
                 let riskScore = 0;
                 let problemParts = [];
 
-                // --- Risk Logic ---
                 if (price > fleetAvg * 1.25) { 
                   riskScore += 45; 
                   problemParts.push("valuation significantly above market average"); 
@@ -66,7 +67,6 @@ const RiskAlerts = () => {
                   problemParts.push("leasehold depreciation risk");
                 }
 
-                // Filtering: রিস্ক স্কোর অন্তত ২০ হলে দেখাবে
                 if (riskScore >= 20 || searchTerm !== "") {
                   return {
                     id: uprn,
@@ -91,7 +91,7 @@ const RiskAlerts = () => {
           }
         });
       } catch (err) {
-        console.error("Fetch Error:", err);
+        console.error("Critical Ingestion Error:", err);
         setLoading(false);
       }
     };
@@ -112,39 +112,40 @@ const RiskAlerts = () => {
     <div className="min-h-screen bg-[#FCFDFF] p-4 md:p-10 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-10">
         
-        {/* Header */}
+        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-slate-100 pb-8">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-rose-500 font-bold">
               <ShieldAlert size={18} />
-              <span className="text-[10px] uppercase tracking-[0.3em]">Prophetic Intelligence</span>
+              <span className="text-[10px] uppercase tracking-[0.3em]">Prophetic Intelligence Engine</span>
             </div>
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Portfolio Audit</h1>
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Portfolio Risk Audit</h1>
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-               <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-               System Live: Monitoring {totalParsed} Assets
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                System Pulse: Analyzing {totalParsed} Distributed Assets
             </p>
           </div>
           
           <div className="flex gap-3">
-            <StatCard label="High Risk" value={riskyData.filter(d => d.score >= 70).length} color="text-rose-600" />
-            <StatCard label="Total Scanned" value={totalParsed} color="text-slate-900" />
+            <StatCard label="Critical Alerts" value={riskyData.filter(d => d.score >= 70).length} color="text-rose-600" />
+            <StatCard label="Audit Coverage" value={`${totalParsed} Assets`} color="text-slate-900" />
           </div>
         </div>
 
-        {/* Dashboard Grid */}
+        {/* Dashboard Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 border border-slate-100 rounded-[2rem] p-8 bg-white shadow-sm">
+          
+          <div className="lg:col-span-2 border border-slate-100 rounded-[2rem] p-8 bg-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><Activity size={16} /></div>
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Value Analysis Index (k)</h3>
+                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600 border border-indigo-100"><Activity size={16} /></div>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Asset Volatility Index (k-value)</h3>
               </div>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={14} />
                 <input 
                   type="text" 
-                  placeholder="SEARCH UPRN / NAME..."
+                  placeholder="ID / ADDRESS INDEX..."
                   className="w-full md:w-64 bg-slate-50 border border-slate-100 py-3 pl-11 pr-4 rounded-xl text-[10px] font-bold focus:outline-none focus:border-indigo-400 uppercase transition-all"
                   value={searchTerm}
                   onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
@@ -173,45 +174,40 @@ const RiskAlerts = () => {
             </div>
           </div>
 
-          <div className="border border-slate-100 rounded-[2rem] p-8 bg-white flex flex-col justify-between shadow-sm">
+          <div className="border border-slate-100 rounded-[2rem] p-8 bg-white flex flex-col justify-between">
              <div className="space-y-6">
-                <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600">
+                <div className="w-12 h-12 bg-rose-50 border border-rose-100 rounded-2xl flex items-center justify-center text-rose-600">
                   <BrainCircuit size={24} />
                 </div>
                 <div className="space-y-3">
-                  <h2 className="text-xl font-black uppercase tracking-tighter text-slate-900">Audit AI Logic</h2>
+                  <h2 className="text-xl font-black uppercase tracking-tighter text-slate-900">Risk Assessment Heuristics</h2>
                   <p className="text-slate-500 text-[11px] font-bold leading-relaxed uppercase tracking-wider">
-                    The engine flags assets where market price exceeds the average by <span className="text-rose-600">25%</span> or EPC ratings fall below <span className="text-rose-600">Grade D</span>. Leasehold properties are given a secondary risk weighting.
+                    Our proprietary audit engine isolates assets with market-to-value variance exceeding <span className="text-rose-600">25%</span> or sub-optimal <span className="text-rose-600">Grade D-G</span> environmental ratings.
                   </p>
                 </div>
-             </div>
-             <div className="pt-8 border-t border-slate-50">
-                <button className="w-full py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all cursor-pointer">
-                    Download Audit PDF
-                </button>
              </div>
           </div>
         </div>
 
-        {/* Asset Grid */}
+        {/* Asset Queue */}
         <div className="space-y-6">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Vulnerability Queue</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Vulnerability Pipeline</h3>
             <div className="flex items-center gap-5">
-               <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20 cursor-pointer" disabled={currentPage === 1}>
-                 <ChevronLeft size={24} />
-               </button>
-               <span className="text-[10px] font-black text-slate-900 uppercase tabular-nums">Page {currentPage} of {totalPages || 1}</span>
-               <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20 cursor-pointer" disabled={currentPage === totalPages}>
-                 <ChevronRight size={24} />
-               </button>
+                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20 cursor-pointer" disabled={currentPage === 1}>
+                   <ChevronLeft size={24} />
+                </button>
+                <span className="text-[10px] font-black text-slate-900 uppercase tabular-nums">Segment {currentPage} / {totalPages || 1}</span>
+                <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="text-slate-300 hover:text-slate-900 disabled:opacity-20 cursor-pointer" disabled={currentPage === totalPages}>
+                   <ChevronRight size={24} />
+                </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-56 w-full" />) : 
               currentItems.map((item) => (
-                <div key={item.id} className="group border border-slate-100 p-8 rounded-[2.5rem] bg-white hover:border-slate-900 transition-all duration-300 shadow-sm">
+                <div key={item.id} className="group border border-slate-100 p-8 rounded-[2.5rem] bg-white hover:border-slate-900 transition-all duration-300">
                   <div className="flex justify-between items-start mb-6">
                     <span className={`text-[8px] font-black uppercase px-3 py-1.5 rounded-full ${item.bgColor} border border-black/5`} style={{ color: item.color }}>
                       {item.riskLevel}
@@ -223,14 +219,14 @@ const RiskAlerts = () => {
                   
                   <div className="flex items-center gap-5 mb-8">
                      <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase"><Building2 size={14} /> {item.tenure}</div>
-                     <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase"><Target size={14} /> EPC {item.ecp}</div>
+                     <div className="flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase"><Target size={14} /> Compliance {item.ecp}</div>
                   </div>
 
                   <button 
                     onClick={() => setSelectedProperty(item)}
-                    className="w-full bg-slate-50 text-slate-900 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest group-hover:bg-slate-900 group-hover:text-white transition-all cursor-pointer"
+                    className="w-full bg-slate-50 text-slate-900 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest group-hover:bg-slate-900 group-hover:text-white transition-all cursor-pointer border border-slate-100"
                   >
-                    Predict 
+                    Run Predictive Audit 
                   </button>
                 </div>
               ))
@@ -239,15 +235,15 @@ const RiskAlerts = () => {
         </div>
       </div>
 
-      {/* Popup Modal */}
+      {/* Modal Section */}
       {selectedProperty && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-lg rounded-[2.5rem] relative shadow-2xl overflow-hidden border border-slate-100">
-            <div className="p-7 border-b border-slate-50 flex justify-between items-center">
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] relative overflow-hidden border border-slate-200">
+            <div className="p-7 border-b border-slate-100 flex justify-between items-center">
               <div className="flex items-center gap-3 text-indigo-600 font-black text-[10px] uppercase tracking-widest">
-                <Fingerprint size={18} /> Asset Log ID: {selectedProperty.id}
+                <Fingerprint size={18} /> Forensic Log ID: {selectedProperty.id}
               </div>
-              <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 cursor-pointer">
+              <button onClick={() => setSelectedProperty(null)} className="p-2 hover:bg-slate-50 rounded-xl text-slate-400 cursor-pointer transition-colors">
                 <X size={22} />
               </button>
             </div>
@@ -257,25 +253,25 @@ const RiskAlerts = () => {
                 <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{selectedProperty.name}</h2>
                 <div className="flex items-center gap-2 mt-2">
                   <AlertTriangle size={14} className="text-rose-500" />
-                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Urgent Mitigation Recommended</p>
+                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Mitigation Strategy Required</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-5 rounded-3xl bg-slate-50">
-                  <p className="text-[8px] font-black text-slate-400 uppercase mb-2">Internal Score</p>
-                  <p className="text-sm font-black text-slate-900 uppercase">{selectedProperty.score}% Risk Factor</p>
+                <div className="p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                  <p className="text-[8px] font-black text-slate-400 uppercase mb-2">Internal Risk Rating</p>
+                  <p className="text-sm font-black text-slate-900 uppercase">{selectedProperty.score}% Index Factor</p>
                 </div>
-                <div className="p-5 rounded-3xl bg-slate-50">
-                  <p className="text-[8px] font-black text-slate-400 uppercase mb-2">Book Value</p>
+                <div className="p-5 rounded-3xl bg-slate-50 border border-slate-100">
+                  <p className="text-[8px] font-black text-slate-400 uppercase mb-2">Liquidity Value</p>
                   <p className="text-sm font-black text-slate-900">£{selectedProperty.fullPrice}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
-                 <h4 className="text-[9px] font-black uppercase text-indigo-500 tracking-widest">Logic Breakdown</h4>
+                 <h4 className="text-[9px] font-black uppercase text-indigo-500 tracking-widest">Heuristic Attribution</h4>
                  <p className="text-[12px] text-slate-600 font-bold leading-relaxed uppercase">
-                   This asset is flagged due to {selectedProperty.summary} Future valuation may be affected by legislative changes.
+                    Asset flagged via algorithm due to {selectedProperty.summary} Potential exposure identified.
                  </p>
               </div>
 
@@ -283,7 +279,7 @@ const RiskAlerts = () => {
                 onClick={() => setSelectedProperty(null)}
                 className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-rose-600 transition-all cursor-pointer"
               >
-                Close Report
+                Acknowledge & Close
               </button>
             </div>
           </div>
@@ -294,7 +290,7 @@ const RiskAlerts = () => {
 };
 
 const StatCard = ({ label, value, color }) => (
-  <div className="bg-white border border-slate-100 px-6 py-4 rounded-3xl text-right min-w-[140px] shadow-sm">
+  <div className="bg-white border border-slate-100 px-6 py-4 rounded-3xl text-right min-w-[140px]">
     <p className="text-[8px] font-black text-slate-400 uppercase mb-1 tracking-widest">{label}</p>
     <p className={`text-2xl font-black ${color} tabular-nums`}>{value}</p>
   </div>
@@ -304,7 +300,7 @@ const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xl flex flex-col items-center">
+      <div className="bg-white border border-slate-200 p-4 rounded-2xl flex flex-col items-center">
         <p className="text-[9px] font-black text-slate-400 uppercase mb-1">{data.name}</p>
         <p className="text-xl font-black text-slate-900">£{data.val}K</p>
         <div className="mt-2 w-full h-1 rounded-full" style={{ backgroundColor: data.color }}></div>

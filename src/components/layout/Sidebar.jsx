@@ -8,7 +8,8 @@ import {
   Menu, 
   X,
   Activity,
-  Clock
+  Clock,
+  Cpu
 } from 'lucide-react';
 
 const SidebarItem = ({ icon, label, path, active, onClick, loading }) => {
@@ -75,7 +76,7 @@ const Sidebar = () => {
 
   // Simulated loading effect
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1500);
+    const timer = setTimeout(() => setLoading(false), 1200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -86,6 +87,7 @@ const Sidebar = () => {
     { icon: <Search size={18} strokeWidth={2}/>, label: "Market Explorer", path: "/listings" },
     { icon: <BarChart3 size={18} strokeWidth={2}/>, label: "Market Analysis", path: "/analysis" },
     { icon: <AlertCircle size={18} strokeWidth={2}/>, label: "Risk Early Warning", path: "/risks" },
+    { icon: <Cpu size={18} strokeWidth={2}/>, label: "System Documentation", path: "/explain" }, // নতুন পেজ যুক্ত করা হয়েছে
   ];
 
   return (
@@ -98,7 +100,7 @@ const Sidebar = () => {
           </div>
           <span className="text-sm font-bold text-slate-900 tracking-tight">PropheticAI</span>
         </div>
-        <button onClick={toggleSidebar} className="p-1.5 text-slate-500">
+        <button onClick={toggleSidebar} className="p-1.5 text-slate-500 cursor-pointer">
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
@@ -120,12 +122,11 @@ const Sidebar = () => {
         {/* লোগো সেকশন */}
         <div className="h-16 flex items-center px-8 border-b border-slate-50 mb-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-100">
               <Activity size={18} className="text-white" />
             </div>
             <div>
               <h1 className="text-[15px] font-bold text-slate-900 leading-none">PropheticAI</h1>
-              {/* <p className="text-[9px] font-semibold text-slate-400 mt-1 uppercase tracking-wider">DSS Platform</p> */}
             </div>
           </div>
         </div>
@@ -133,7 +134,7 @@ const Sidebar = () => {
         {/* মেনু আইটেমসমূহ */}
         <nav className="flex-1 px-4 space-y-1">
           {loading ? (
-            [...Array(4)].map((_, i) => (
+            [...Array(5)].map((_, i) => (
               <SidebarItem key={i} loading={true} />
             ))
           ) : (
@@ -169,7 +170,7 @@ const Sidebar = () => {
               </div>
               
               <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-slate-800 tabular-nums">
+                <span className="text-[13px] font-bold text-slate-800 tabular-nums leading-tight">
                   {ukTime}
                 </span>
                 <span className="text-[10px] font-medium text-slate-400">
