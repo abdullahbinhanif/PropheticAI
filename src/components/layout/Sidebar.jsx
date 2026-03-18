@@ -47,7 +47,7 @@ const Sidebar = () => {
   const [ukTime, setUkTime] = useState('');
   const [ukDate, setUkDate] = useState('');
 
-  // UK Time Logic
+  
   useEffect(() => {
     const updateTime = () => {
       const options = {
@@ -74,7 +74,7 @@ const Sidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Simulated loading effect
+ 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
     return () => clearTimeout(timer);
@@ -87,25 +87,25 @@ const Sidebar = () => {
     { icon: <Search size={18} strokeWidth={2}/>, label: "Market Explorer", path: "/listings" },
     { icon: <BarChart3 size={18} strokeWidth={2}/>, label: "Market Analysis", path: "/analysis" },
     { icon: <AlertCircle size={18} strokeWidth={2}/>, label: "Risk Early Warning", path: "/risks" },
-    { icon: <Cpu size={18} strokeWidth={2}/>, label: "System Documentation", path: "/explain" }, // নতুন পেজ যুক্ত করা হয়েছে
+    { icon: <Cpu size={18} strokeWidth={2}/>, label: "System Documentation", path: "/explain" }, 
   ];
 
   return (
     <>
-      {/* মোবাইল হেডার */}
+     
       <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-white border-b border-slate-100 px-5 flex items-center justify-between z-50">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center">
             <Activity size={16} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-slate-900 tracking-tight">PropheticAI</span>
+          <span className="text-sm font-bold text-slate-900 tracking-tight">PropertyIQ</span>
         </div>
         <button onClick={toggleSidebar} className="p-1.5 text-slate-500 cursor-pointer">
           {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* ব্যাকড্রপ */}
+     
       {isOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/10 backdrop-blur-[2px] z-40 lg:hidden transition-opacity"
@@ -113,25 +113,25 @@ const Sidebar = () => {
         ></div>
       )}
 
-      {/* মেইন সাইডবার */}
+     
       <aside className={`
         fixed top-0 left-0 h-full bg-white border-r border-slate-100 flex flex-col z-50 transition-transform duration-300 ease-in-out
         w-64 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         
-        {/* লোগো সেকশন */}
+       
         <div className="h-16 flex items-center px-8 border-b border-slate-50 mb-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-100">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg">
               <Activity size={18} className="text-white" />
             </div>
             <div>
-              <h1 className="text-[15px] font-bold text-slate-900 leading-none">PropheticAI</h1>
+              <h1 className="text-[15px] font-bold text-slate-900 leading-none">PropertyIQ</h1>
             </div>
           </div>
         </div>
         
-        {/* মেনু আইটেমসমূহ */}
+        
         <nav className="flex-1 px-4 space-y-1">
           {loading ? (
             [...Array(5)].map((_, i) => (
@@ -152,7 +152,7 @@ const Sidebar = () => {
           )}
         </nav>
 
-        {/* নিচের স্ট্যাটাস বার - Live UK Time & Date */}
+     
         <div className="p-4 border-t border-slate-50 bg-slate-50/30">
           {loading ? (
             <div className="h-14 bg-white border border-slate-100 rounded-xl animate-pulse"></div>

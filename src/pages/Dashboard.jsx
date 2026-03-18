@@ -134,7 +134,7 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-2xl font-black tracking-tighter uppercase">
-                Prophetic<span className="text-indigo-600">AI </span> <span className="text-slate-400">Overview</span>
+                Property <span className="text-indigo-600">IQ </span> <span className="text-slate-400">Overview</span>
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className={`w-2 h-2 rounded-full ${connStatus === 'Nominal' ? 'bg-emerald-500' : 'bg-rose-500'}`} />

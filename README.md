@@ -1,6 +1,6 @@
-# 🏛️ PropheticAI: Asset Intelligence & Audit System
+# 🏛️ PropertyIQ: Asset Intelligence & Audit System
 
-PropheticAI is an advanced **Explainable Decision-Support System** designed to evaluate residential property investments across the UK. Unlike "black-box" investment tools, PropheticAI prioritizes transparency by breaking down socio-economic factors, industry dependencies, and yield-to-risk probabilities using raw ONS (Office for National Statistics) data patterns.
+PropertyIQ is an advanced **Explainable Decision-Support System** designed to evaluate residential property investments across the UK. Unlike "black-box" investment tools, PropertyIQ prioritizes transparency by breaking down socio-economic factors, industry dependencies, and yield-to-risk probabilities using raw ONS (Office for National Statistics) data patterns.
 
 
 
@@ -35,6 +35,8 @@ PropheticAI is an advanced **Explainable Decision-Support System** designed to e
 ## ⚙️ Quick Start
 
 This project is organized in a single-root structure. Follow these steps to get the environment running:
+
+
 
 ### 1. Install Dependencies
 **Backend (Python):**

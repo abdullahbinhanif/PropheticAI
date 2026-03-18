@@ -45,7 +45,7 @@ const Explain = () => {
           <Activity size={14} /> Project Documentation
         </div>
         <h1 className="text-3xl md:text-4xl font-semibold text-slate-900 tracking-tight mb-4">
-          PropheticAI Architecture
+          PropertyIQ Architecture
         </h1>
         <p className="text-base text-slate-500 max-w-2xl leading-relaxed">
           An explainable decision-support system designed to evaluate UK residential property investments through transparent data analytics.
@@ -137,7 +137,7 @@ const Explain = () => {
 
       {/* --- FOOTER --- */}
       <footer className="max-w-4xl mx-auto px-6 py-12 border-t border-slate-50 flex justify-between items-center text-[11px] text-slate-400">
-        <p>© 2026 PropheticAI • Audit Intelligence</p>
+        <p>© 2026 PropertyIQ</p>
         <div className="flex gap-4">
           <span className="hover:text-slate-600 cursor-pointer">System Documentation</span>
         </div>

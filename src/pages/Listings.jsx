@@ -115,7 +115,7 @@ const Listings = () => {
               <Building2 size={22} />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Prophetic<span className="text-indigo-600">Core</span></h1>
+              <h1 className="text-lg font-bold tracking-tight">PropertyIQ<span className="text-indigo-600">Core</span></h1>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
                 <Activity size={10} className={error ? "text-red-500" : "text-emerald-500"} /> 
                 {error ? "Offline Node" : "Market Live"}
