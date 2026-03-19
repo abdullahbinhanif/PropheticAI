@@ -88,7 +88,7 @@ const PredictModal = ({ isOpen, onClose, uprn, propertyData }) => {
                 <button 
                   type="submit"
                   disabled={!userInput.trim()}
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 group"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 text-white rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   Generate Insights
                   <Send size={14} className="group-hover:translate-x-0.5 transition-transform" />
