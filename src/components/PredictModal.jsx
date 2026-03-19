@@ -153,7 +153,7 @@ const PredictModal = ({ isOpen, onClose, uprn, propertyData }) => {
                 </button>
                 <button 
                   onClick={onClose}
-                  className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-black transition-all"
+                  className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-black transition-all cursor-pointer"
                 >
                   Close Engine
                 </button>
