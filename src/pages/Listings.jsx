@@ -4,12 +4,14 @@ import {
   MapPin, ArrowUpRight, Search, X,
   Database, ChevronLeft, ChevronRight, 
   Building2, SearchX, ShieldAlert, BarChart3,
-  CheckCircle2, ListFilter, Bed, Activity
+  CheckCircle2, ListFilter, Bed, Activity, Sparkles
 } from 'lucide-react';
+
+// PredictModal ইমপোর্ট করা হলো
+import PredictModal from '../components/PredictModal'; 
 
 /**
  * @component Highlight
- * @description Utility component for real-time search indexing. 
  */
 const Highlight = ({ text, highlight }) => {
   if (!highlight || !highlight.trim()) return <span>{text}</span>;
@@ -55,6 +57,10 @@ const Listings = () => {
   const [error, setError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12;
+
+  // Modal States
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   const calculateStability = (prop) => {
     let score = 70; 
@@ -107,7 +113,13 @@ const Listings = () => {
   return (
     <div className="min-h-screen bg-[#FBFBFC] pb-20 text-slate-900 font-sans">
       
-      {/* Global Navigation Hub */}
+      <PredictModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        uprn={selectedProperty?.uprn}
+        propertyData={selectedProperty}
+      />
+
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -133,10 +145,7 @@ const Listings = () => {
               className="w-full pl-11 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-indigo-600 outline-none transition-all font-medium"
             />
             {searchTerm && (
-              <button 
-                onClick={() => setSearchTerm('')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
-              >
+              <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500 cursor-pointer">
                 <X size={18} />
               </button>
             )}
@@ -145,8 +154,6 @@ const Listings = () => {
       </header>
 
       <main className="max-w-[1440px] mx-auto px-6 mt-8">
-        
-        {/* Real-time Inventory Insights */}
         {!loading && (
           <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-px bg-slate-200 border border-slate-200 rounded-2xl overflow-hidden">
             <div className="bg-white p-5 flex items-center gap-4">
@@ -173,7 +180,6 @@ const Listings = () => {
           </div>
         )}
 
-        {/* Asset Distribution Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {loading ? [...Array(8)].map((_, i) => <SkeletonCard key={i} />) : 
             currentItems.map((prop) => {
@@ -182,11 +188,7 @@ const Listings = () => {
               const pId = prop.id;
 
               return (
-                <div 
-                  key={pId} 
-                  className="group bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-500 transition-all flex flex-col cursor-pointer"
-                  onClick={() => navigate(`/property/${pId}`)}
-                >
+                <div key={pId} className="group bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-indigo-500 transition-all flex flex-col cursor-pointer" onClick={() => navigate(`/property/${pId}`)}>
                   <div className="relative h-52 bg-slate-50 overflow-hidden text-slate-500 border-b border-slate-100">
                     {imgUrl ? (
                       <img src={imgUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Property Asset" />
@@ -237,18 +239,33 @@ const Listings = () => {
                     </div>
                   </div>
                   
-                  <div className="px-5 pb-5 grid grid-cols-2 gap-2 mt-auto">
+                  {/* Buttons Section - Updated to 3 buttons */}
+                  <div className="px-5 pb-5 flex flex-col gap-2 mt-auto">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); navigate(`/risks/${pId}`); }}
+                          className="py-2.5 rounded-xl text-[10px] font-black uppercase border border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <ShieldAlert size={14}/> Risk Audit
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); navigate(`/analysis/${pId}`); }}
+                          className="py-2.5 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white hover:bg-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          Insights <ArrowUpRight size={14}/>
+                        </button>
+                      </div>
+                      
+                      {/* New AI Predictor Button */}
                       <button 
-                        onClick={(e) => { e.stopPropagation(); navigate(`/risks/${pId}`); }}
-                        className="py-2.5 rounded-xl text-[10px] font-black uppercase border border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setSelectedProperty(prop);
+                          setIsModalOpen(true);
+                        }}
+                        className="w-full py-2.5 rounded-lg text-[10px] font-black uppercase bg-indigo-600 text-white hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        <ShieldAlert size={14}/> Risk Audit
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); navigate(`/analysis/${pId}`); }}
-                        className="py-2.5 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white hover:bg-indigo-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                      >
-                        Insights <ArrowUpRight size={14}/>
+                        <Sparkles size={14}/> AI Property Predictor
                       </button>
                   </div>
                 </div>
@@ -262,10 +279,7 @@ const Listings = () => {
             <SearchX size={40} className="mx-auto text-slate-200 mb-4" />
             <h3 className="text-lg font-bold text-slate-800 tracking-tight">Zero matches for "{searchTerm}"</h3>
             <p className="text-sm text-slate-400 mb-4 font-medium">Try adjusting your filters or refining your search query.</p>
-            <button 
-              onClick={() => setSearchTerm('')} 
-              className="mt-2 text-indigo-600 font-black underline underline-offset-4 text-xs uppercase tracking-widest cursor-pointer hover:text-indigo-800"
-            >
+            <button onClick={() => setSearchTerm('')} className="mt-2 text-indigo-600 font-black underline underline-offset-4 text-xs uppercase tracking-widest cursor-pointer hover:text-indigo-800">
               Reset All Filters
             </button>
           </div>
