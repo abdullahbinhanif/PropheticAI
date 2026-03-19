@@ -59,7 +59,7 @@ const PredictModal = ({ isOpen, onClose, uprn, propertyData }) => {
             <Sparkles size={18} className="text-indigo-500" />
             <span className="text-sm font-semibold text-slate-700 tracking-tight">AI Asset Insights</span>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
             <X size={20} />
           </button>
         </div>
