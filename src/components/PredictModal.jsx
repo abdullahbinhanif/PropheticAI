@@ -147,7 +147,7 @@ const PredictModal = ({ isOpen, onClose, uprn, propertyData }) => {
               <div className="flex gap-3">
                 <button 
                   onClick={() => setStep(1)} 
-                  className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all"
+                  className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   New Query
                 </button>
