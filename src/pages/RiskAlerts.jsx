@@ -27,7 +27,8 @@ const RiskAlerts = () => {
     const fetchCSVData = async () => {
       try {
         const base_url = import.meta.env.VITE_BACKEND_URL || import.meta.env.Backend_URL || "http://127.0.0.1:5000";
-        const response = await fetch(`${base_url.replace(/\/$/, '')}/api/risk-data-csv`);
+        const cleanUrl = base_url.replace(/\/$/, '');
+        const response = await fetch(`${cleanUrl}/api/risk-data-csv`);
         const csvText = await response.text();
 
         Papa.parse(csvText, {
@@ -35,8 +36,9 @@ const RiskAlerts = () => {
           dynamicTyping: true,
           skipEmptyLines: true,
           complete: (results) => {
-            if (results.data) {
+            if (results.data && results.data.length > 0) {
               setTotalParsed(results.data.length); 
+              
               const validPrices = results.data
                 .map(r => parseFloat(r.price) || 0)
                 .filter(p => p > 0);
@@ -47,7 +49,8 @@ const RiskAlerts = () => {
 
               const processedItems = results.data.map((row, index) => {
                 const price = parseFloat(row.price) || 0;
-                const ecp = String(row.ecp_rating || "N/A").toUpperCase();
+                // app.py থেকে আসা epc_rating হ্যান্ডেল করা
+                const epc = String(row.epc_rating || row.ecp_rating || "N/A").toUpperCase();
                 const uprn = row.uprn && row.uprn !== "N/A" ? row.uprn : `ASSET-${1000 + index}`;
                 const tenure = String(row.tenure || "N/A").toLowerCase();
                 
@@ -58,32 +61,29 @@ const RiskAlerts = () => {
                   riskScore += 45; 
                   problemParts.push("valuation significantly above market average"); 
                 }
-                if (['E', 'F', 'G'].some(grade => ecp.includes(grade))) { 
+                if (['D', 'E', 'F', 'G'].some(grade => epc.includes(grade))) { 
                   riskScore += 40; 
-                  problemParts.push(`critical energy rating (${ecp})`); 
+                  problemParts.push(`critical energy rating (${epc})`); 
                 }
                 if (tenure.includes("lease")) {
                   riskScore += 15;
                   problemParts.push("leasehold depreciation risk");
                 }
 
-                if (riskScore >= 20 || searchTerm !== "") {
-                  return {
-                    id: uprn,
-                    name: row.title || "Unidentified Asset",
-                    val: Math.round(price / 1000),
-                    fullPrice: price.toLocaleString(),
-                    ecp: ecp,
-                    tenure: row.tenure || "Freehold",
-                    riskLevel: riskScore >= 70 ? "Critical Warning" : riskScore >= 40 ? "Attention Required" : "Stable",
-                    score: riskScore,
-                    color: riskScore >= 70 ? "#f43f5e" : riskScore >= 40 ? "#f59e0b" : "#10b981",
-                    bgColor: riskScore >= 70 ? "bg-rose-50" : riskScore >= 40 ? "bg-amber-50" : "bg-emerald-50",
-                    summary: problemParts.length > 0 ? problemParts.join(", and ") + "." : "maintained within safety parameters."
-                  };
-                }
-                return null;
-              }).filter(item => item !== null);
+                return {
+                  id: uprn,
+                  name: row.title || "Unidentified Asset",
+                  val: Math.round(price / 1000),
+                  fullPrice: price.toLocaleString(),
+                  ecp: epc,
+                  tenure: row.tenure || "Freehold",
+                  riskLevel: riskScore >= 70 ? "Critical Warning" : riskScore >= 40 ? "Attention Required" : "Stable",
+                  score: riskScore,
+                  color: riskScore >= 70 ? "#f43f5e" : riskScore >= 40 ? "#f59e0b" : "#10b981",
+                  bgColor: riskScore >= 70 ? "bg-rose-50" : riskScore >= 40 ? "bg-amber-50" : "bg-emerald-50",
+                  summary: problemParts.length > 0 ? problemParts.join(", and ") + "." : "maintained within safety parameters."
+                };
+              });
               
               setRiskyData(processedItems.sort((a, b) => b.score - a.score));
             }
@@ -134,7 +134,6 @@ const RiskAlerts = () => {
 
         {/* Dashboard Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
           <div className="lg:col-span-2 border border-slate-100 rounded-[2rem] p-8 bg-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
               <div className="flex items-center gap-3">
@@ -153,10 +152,11 @@ const RiskAlerts = () => {
               </div>
             </div>
             
-            <div className="h-[280px] w-full">
+            {/* Fix: Container height is fixed to prevent Recharts -1 warning */}
+            <div className="h-[280px] min-h-[280px] w-full">
               {loading ? <Skeleton className="w-full h-full" /> : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={filteredRisky.slice(0, 15)}>
+                  <AreaChart data={filteredRisky.length > 0 ? filteredRisky.slice(0, 15) : []}>
                     <defs>
                       <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1}/>
