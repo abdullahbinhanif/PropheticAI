@@ -152,7 +152,7 @@ const RiskAlerts = () => {
               </div>
             </div>
             
-            {/* Fix: Container height is fixed to prevent Recharts -1 warning */}
+          
             <div className="h-[280px] min-h-[280px] w-full">
               {loading ? <Skeleton className="w-full h-full" /> : (
                 <ResponsiveContainer width="100%" height="100%">
