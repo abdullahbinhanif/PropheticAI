@@ -128,7 +128,7 @@ const PredictModal = ({ isOpen, onClose, uprn, propertyData }) => {
                   </div>
                   <p className="text-sm font-semibold text-slate-700">Top Rated School</p>
                   <p className="text-[10px] text-slate-500 flex items-center gap-1">
-                    <Clock size={10} /> 12 min drive
+                    <Clock size={10} /> 30 min drive
                   </p>
                 </div>
               </div>
