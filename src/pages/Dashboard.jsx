@@ -18,10 +18,7 @@ const Dashboard = () => {
   const [properties, setProperties] = useState([]);
   const [connStatus, setConnStatus] = useState('Checking');
 
-  /**
-   * Effect: Data Synchronization
-   * Fetches property records from the Python/Flask backend using environment-aware URLs.
-   */
+ 
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
