@@ -4,10 +4,10 @@ import {
   MapPin, ArrowUpRight, Search, X,
   Database, ChevronLeft, ChevronRight, 
   Building2, SearchX, ShieldAlert, BarChart3,
-  CheckCircle2, ListFilter, Bed, Activity, Sparkles
+  CheckCircle2, ListFilter, Bed, Activity, Sparkles,
+  ArrowRight
 } from 'lucide-react';
 
-// PredictModal ইমপোর্ট করা হলো
 import PredictModal from '../components/PredictModal'; 
 
 /**
@@ -116,14 +116,14 @@ const Listings = () => {
       <PredictModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        uprn={selectedProperty?.uprn}
+        uprn={selectedProperty?.uprn || "GLOBAL"}
         propertyData={selectedProperty}
       />
 
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-[1440px] mx-auto px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 text-white rounded-xl">
+            <div className="bg-indigo-600 p-2 text-white rounded-xl shadow-sm">
               <Building2 size={22} />
             </div>
             <div>
@@ -155,7 +155,7 @@ const Listings = () => {
 
       <main className="max-w-[1440px] mx-auto px-6 mt-8">
         {!loading && (
-          <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-px bg-slate-200 border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 border border-slate-100 rounded-2xl overflow-hidden">
             <div className="bg-white p-5 flex items-center gap-4">
               <div className="p-2.5 bg-slate-50 rounded-lg text-slate-400 border border-slate-100"><ListFilter size={20} /></div>
               <div>
@@ -177,6 +177,32 @@ const Listings = () => {
                 <p className="text-xl font-black">{error ? "Offline" : "Nominal"}</p>
               </div>
             </div>
+            {/* New Global AI Predictor Card */}
+            <div 
+           onClick={() => { setSelectedProperty(null); setIsModalOpen(true); }}
+        className="bg-white p-5 flex items-center justify-between group cursor-pointer hover:border-indigo-200 border border-slate-100 transition-all duration-300 ease-in-out relative overflow-hidden"
+        >
+        {/* Subtle Background Glow on Hover */}
+        <div className="absolute inset-0 bg-indigo-50/0 group-hover:bg-indigo-50/30 transition-colors duration-300" />
+
+        <div className="flex items-center gap-4 relative z-10">
+       <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-500 group-hover:scale-110 transition-transform duration-300">
+      <Sparkles size={20} strokeWidth={1.5} />
+       </div>
+       <div>
+        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-0.5">
+        PropertyIQ AI
+      </p>
+      <p className="text-[14px] font-semibold text-slate-700">
+        Predict Market Property
+      </p>
+      </div>
+     </div>
+  
+       <div className="relative z-10 p-2 rounded-full bg-slate-50 group-hover:bg-indigo-500 group-hover:text-white text-slate-300 transition-all duration-300">
+      <ArrowRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+     </div>
+      </div>
           </div>
         )}
 
@@ -239,34 +265,19 @@ const Listings = () => {
                     </div>
                   </div>
                   
-                  {/* Buttons Section - Updated to 3 buttons */}
-                  <div className="px-5 pb-5 flex flex-col gap-2 mt-auto">
-                      <div className="grid grid-cols-2 gap-2">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); navigate(`/risks/${pId}`); }}
-                          className="py-2.5 rounded-xl text-[10px] font-black uppercase border border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <ShieldAlert size={14}/> Risk Audit
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); navigate(`/analysis/${pId}`); }}
-                          className="py-2.5 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white hover:bg-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          Insights <ArrowUpRight size={14}/>
-                        </button>
-                      </div>
-                      
-                      {/* New AI Predictor Button */}
-                      <button 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          setSelectedProperty(prop);
-                          setIsModalOpen(true);
-                        }}
-                        className="w-full py-2.5 rounded-lg text-[10px] font-black uppercase bg-indigo-600 text-white hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                      >
-                        <Sparkles size={14}/> AI Property Predictor
-                      </button>
+                  <div className="px-5 pb-5 flex gap-2 mt-auto">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); navigate(`/risks/${pId}`); }}
+                      className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase border border-slate-200 text-slate-500 hover:bg-red-50 hover:border-red-100 hover:text-red-600 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <ShieldAlert size={14}/> Risk Audit
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); navigate(`/analysis/${pId}`); }}
+                      className="flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase bg-slate-900 text-white hover:bg-black transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      Insights <ArrowUpRight size={14}/>
+                    </button>
                   </div>
                 </div>
               );
@@ -274,6 +285,7 @@ const Listings = () => {
           }
         </div>
 
+        {/* Empty State */}
         {!loading && filteredData.length === 0 && (
           <div className="py-24 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/50">
             <SearchX size={40} className="mx-auto text-slate-200 mb-4" />
@@ -285,6 +297,7 @@ const Listings = () => {
           </div>
         )}
 
+        {/* Pagination */}
         {!loading && totalPages > 1 && (
           <div className="mt-16 flex items-center justify-center gap-2">
             <button 
