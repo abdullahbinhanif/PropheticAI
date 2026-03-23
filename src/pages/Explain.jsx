@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Server, Code2, Database, Zap, 
   BrainCircuit, BarChart3, Activity, 
-  CheckCircle2, Timer, Globe, Layers
+  CheckCircle2, Timer, Globe, Layers,
+  FileSpreadsheet
 } from 'lucide-react';
 
 /**
@@ -123,14 +124,24 @@ const Explain = () => {
       {/* --- FUTURE SCOPE --- */}
       <section className="max-w-4xl mx-auto px-6 py-12">
         <div className="p-8 border border-slate-100 rounded-[2rem] bg-slate-50/30 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 text-indigo-500 font-bold text-[10px] uppercase tracking-widest">
               <Globe size={14} /> Data Intelligence
             </div>
-            <h3 className="text-lg font-medium text-slate-900">ONS & Public Datasets</h3>
-            <p className="text-[12px] text-slate-500 max-w-sm">
-              The system is being architected to integrate Office for National Statistics (ONS) data for high-fidelity regional analysis and predictive modeling.
+            <h3 className="text-lg font-medium text-slate-900">ONS & CSV Dataset Integration</h3>
+            <p className="text-[12px] text-slate-500 max-w-sm leading-relaxed">
+              The system is being architected to integrate <strong>Office for National Statistics (ONS)</strong> APIs alongside proprietary <strong>CSV datasets</strong> for high-fidelity regional analysis, property size metrics, and predictive modeling.
             </p>
+          </div>
+          <div className="flex gap-4">
+            <div className="p-4 bg-white rounded-2xl border border-slate-100">
+                <FileSpreadsheet size={24} className="text-emerald-500 mb-2"/>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Static CSV</p>
+            </div>
+            <div className="p-4 bg-white rounded-2xl border border-slate-100">
+                <Globe size={24} className="text-blue-500 mb-2"/>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">Live ONS</p>
+            </div>
           </div>
         </div>
       </section>
