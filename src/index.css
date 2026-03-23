@@ -6,10 +6,10 @@
   --color-slate-900: #1e293b;
 }
 
-
 @layer base {
   html {
-    scroll-behavior: smooth;
+ 
+    scroll-behavior: initial !important;
   }
 
   body {
@@ -20,14 +20,29 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    width: 100%;
+    min-height: 100vh;
   }
 
-  
   ::selection {
     background-color: #dbeafe; 
     color: #2563eb; 
   }
 }
+
+
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
 
 ::-webkit-scrollbar {
   width: 6px;
