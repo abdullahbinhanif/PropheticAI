@@ -81,7 +81,7 @@ const Explain = () => {
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { name: 'Flask', icon: <Server size={20} />, label: 'Backend Server', color: 'text-emerald-600' },
+            { name: 'Django', icon: <Server size={20} />, label: 'Backend Framework', color: 'text-emerald-700' },
             { name: 'React', icon: <Code2 size={20} />, label: 'Frontend Interface', color: 'text-indigo-600' },
             { name: 'Pandas', icon: <Database size={20} />, label: 'Data Processing', color: 'text-amber-600' },
             { name: 'Chart.js', icon: <BarChart3 size={20} />, label: 'Visual Analytics', color: 'text-rose-600' }
