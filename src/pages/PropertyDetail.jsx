@@ -239,7 +239,7 @@ const PropertyDetail = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart cx="50%" cy="50%" outerRadius="75%" data={getRadarData()}>
                     <PolarGrid stroke="#F1F5F9" />
-                    <PolarAngleAxis dataKey="subject" tick={{fontSize: 9, fontWeight: 700, fill: '#94A3B8'}} />
+                    <PolarAngleAxis dataKey="subject" tick={{fontSize: 7, fontWeight: 700, fill: '#94A3B8'}} />
                     <Radar 
                       dataKey="A" 
                       stroke="#4F46E5" 
